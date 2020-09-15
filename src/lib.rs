@@ -1,6 +1,6 @@
 pub mod model;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use reqwest::StatusCode;
 use std::error::Error;
@@ -37,6 +37,14 @@ struct CreateIssueRequest {
     update: HashMap<String, String>
 }
 
+#[derive(Deserialize, Debug)]
+struct CreateIssueResponse {
+    id: String,
+    key: String,
+    #[serde(rename = "self")] 
+    url: String
+}
+
 pub async fn create_issue(issue: model::Issue, token: &str) -> Result<(), Box<dyn Error>> {
     let request = CreateIssueRequest{fields: issue, update: HashMap::new()};
 
@@ -48,11 +56,12 @@ pub async fn create_issue(issue: model::Issue, token: &str) -> Result<(), Box<dy
         .send()
         .await?;
 
-    println!("{:?}", serde_json::to_string(&request));
+    //println!("{:?}", serde_json::to_string(&request));
 
     match response.status() {
         StatusCode::CREATED => {
-            println!("Response: {}", response.text().await?);
+            let created = response.json::<CreateIssueResponse>().await?;
+            println!("https://heapinc.atlassian.net/browse/{}", created.key);
             Ok(())
         }
         code => Err(Box::new(ApiError::new(
