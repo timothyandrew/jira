@@ -60,3 +60,27 @@ pub async fn create_issue(issue: model::Issue, token: &str) -> Result<(), Box<dy
         ))),
     }
 }
+
+// TODO: Improve this so it converts markdown in `text` into Jira's document format.
+pub fn text_to_document(text: String) -> model::Document {
+    model::Document {
+        version: 1,
+        root: model::DocumentNode {
+            doctype: String::from("doc"),
+            content: vec![
+                model::DocumentNode {
+                    doctype: String::from("paragraph"),
+                    content: vec![
+                        model::DocumentNode {
+                            doctype: String::from("text"),
+                            text: Some(text),
+                            ..Default::default()
+                        }
+                    ],
+                    ..Default::default()
+                }
+            ],
+            ..Default::default()
+        } 
+    }
+}

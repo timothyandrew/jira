@@ -54,7 +54,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             let issue = model::Issue {
                 summary: c.value_of("title").unwrap().to_owned(),
-                description: c.value_of("description").map(String::from),
+                description: c.value_of("description").map(String::from).map(jira::text_to_document),
                 labels: match c.values_of("labels") {
                     Some(l) => l.map(String::from).collect(),
                     None => Vec::new(),
