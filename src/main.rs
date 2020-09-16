@@ -67,6 +67,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 ),
         )
         .setting(AppSettings::SubcommandRequiredElseHelp)
+        .setting(AppSettings::VersionlessSubcommands)
         .get_matches();
 
     let email = env::var("JIRA_EMAIL").expect("A `JIRA_EMAIL` is required");
