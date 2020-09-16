@@ -45,7 +45,12 @@ struct CreateIssueResponse {
     url: String,
 }
 
-pub async fn create_issue(issue: model::Issue, token: &str) -> Result<(), Box<dyn Error>> {
+pub struct ApiConfig {
+    pub token: String,
+    pub subdomain: String
+}
+
+pub async fn create_issue(issue: model::Issue, config: &ApiConfig) -> Result<(), Box<dyn Error>> {
     let request = CreateIssueRequest {
         fields: issue,
         update: HashMap::new(),
@@ -53,8 +58,8 @@ pub async fn create_issue(issue: model::Issue, token: &str) -> Result<(), Box<dy
 
     // TODO: reuse client
     let response = reqwest::Client::new()
-        .post("https://heapinc.atlassian.net/rest/api/3/issue")
-        .basic_auth("tim@heapanalytics.com", Some(token))
+        .post(&format!("https://{}.atlassian.net/rest/api/3/issue", &config.subdomain))
+        .basic_auth("tim@heapanalytics.com", Some(&config.token))
         .json(&request)
         .send()
         .await?;
@@ -64,7 +69,7 @@ pub async fn create_issue(issue: model::Issue, token: &str) -> Result<(), Box<dy
     match response.status() {
         StatusCode::CREATED => {
             let created = response.json::<CreateIssueResponse>().await?;
-            println!("https://heapinc.atlassian.net/browse/{}", created.key);
+            println!("https://{}.atlassian.net/browse/{}", config.subdomain, created.key);
             Ok(())
         }
         code => Err(Box::new(ApiError::new(&format!(

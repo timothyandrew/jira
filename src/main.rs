@@ -7,6 +7,14 @@ use std::error::Error;
 async fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("CLI Jira Interface")
         .arg(
+            Arg::with_name("subdomain")
+                .long("subdomain")
+                .short("d")
+                .help("Your atlassian.net subdomain")
+                .default_value("heapinc")
+                .takes_value(true),
+        )
+        .arg(
             Arg::with_name("project")
                 .long("project")
                 .short("p")
@@ -16,7 +24,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         )
         .subcommand(
             SubCommand::with_name("create")
-                .about("Create issues")
+                .about("Create Jira issues")
                 .arg(
                     Arg::with_name("title")
                         .long("title")
@@ -62,7 +70,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .get_matches();
 
     let token = env::var("JIRA_TOKEN").expect("A `JIRA_TOKEN` is required");
+    let subdomain = matches.value_of("subdomain").unwrap();
     let project = matches.value_of("project").unwrap();
+
+    let config = jira::ApiConfig{
+        token: token.to_owned(),
+        subdomain: subdomain.to_owned()
+    };
 
     match matches.subcommand() {
         ("create", Some(c)) => {
@@ -89,7 +103,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 },
             };
 
-            jira::create_issue(issue, &token).await?;
+            jira::create_issue(issue, &config).await?;
         }
         _ => panic!("Invalid subcommand"),
     }
