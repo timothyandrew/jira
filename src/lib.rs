@@ -46,6 +46,7 @@ struct CreateIssueResponse {
 }
 
 pub struct ApiConfig {
+    pub email: String,
     pub token: String,
     pub subdomain: String
 }
@@ -59,7 +60,7 @@ pub async fn create_issue(issue: model::Issue, config: &ApiConfig) -> Result<(),
     // TODO: reuse client
     let response = reqwest::Client::new()
         .post(&format!("https://{}.atlassian.net/rest/api/3/issue", &config.subdomain))
-        .basic_auth("tim@heapanalytics.com", Some(&config.token))
+        .basic_auth(&config.email, Some(&config.token))
         .json(&request)
         .send()
         .await?;

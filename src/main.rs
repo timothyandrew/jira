@@ -69,11 +69,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .get_matches();
 
+    let email = env::var("JIRA_EMAIL").expect("A `JIRA_EMAIL` is required");
     let token = env::var("JIRA_TOKEN").expect("A `JIRA_TOKEN` is required");
     let subdomain = matches.value_of("subdomain").unwrap();
     let project = matches.value_of("project").unwrap();
 
     let config = jira::ApiConfig{
+        email: email.to_owned(),
         token: token.to_owned(),
         subdomain: subdomain.to_owned()
     };
