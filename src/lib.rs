@@ -1,8 +1,8 @@
 pub mod model;
 
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use reqwest::StatusCode;
 use std::error::Error;
 use std::fmt;
 
@@ -34,19 +34,22 @@ impl Error for ApiError {
 #[derive(Serialize, Debug)]
 struct CreateIssueRequest {
     fields: model::Issue,
-    update: HashMap<String, String>
+    update: HashMap<String, String>,
 }
 
 #[derive(Deserialize, Debug)]
 struct CreateIssueResponse {
     id: String,
     key: String,
-    #[serde(rename = "self")] 
-    url: String
+    #[serde(rename = "self")]
+    url: String,
 }
 
 pub async fn create_issue(issue: model::Issue, token: &str) -> Result<(), Box<dyn Error>> {
-    let request = CreateIssueRequest{fields: issue, update: HashMap::new()};
+    let request = CreateIssueRequest {
+        fields: issue,
+        update: HashMap::new(),
+    };
 
     // TODO: reuse client
     let response = reqwest::Client::new()
@@ -64,9 +67,10 @@ pub async fn create_issue(issue: model::Issue, token: &str) -> Result<(), Box<dy
             println!("https://heapinc.atlassian.net/browse/{}", created.key);
             Ok(())
         }
-        code => Err(Box::new(ApiError::new(
-            &format!("Got a {} when attempting to create an issue", code),
-        ))),
+        code => Err(Box::new(ApiError::new(&format!(
+            "Got a {} when attempting to create an issue",
+            code
+        )))),
     }
 }
 
@@ -76,20 +80,16 @@ pub fn text_to_document(text: String) -> model::Document {
         version: 1,
         root: model::DocumentNode {
             doctype: String::from("doc"),
-            content: vec![
-                model::DocumentNode {
-                    doctype: String::from("paragraph"),
-                    content: vec![
-                        model::DocumentNode {
-                            doctype: String::from("text"),
-                            text: Some(text),
-                            ..Default::default()
-                        }
-                    ],
+            content: vec![model::DocumentNode {
+                doctype: String::from("paragraph"),
+                content: vec![model::DocumentNode {
+                    doctype: String::from("text"),
+                    text: Some(text),
                     ..Default::default()
-                }
-            ],
+                }],
+                ..Default::default()
+            }],
             ..Default::default()
-        } 
+        },
     }
 }

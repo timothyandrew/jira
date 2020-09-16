@@ -7,7 +7,7 @@ pub struct IssueType {
 
 #[derive(Serialize, Debug)]
 pub struct Component {
-    pub id: String,
+    pub name: String,
 }
 
 #[derive(Serialize, Debug)]
@@ -19,25 +19,25 @@ pub struct Project {
 pub struct Document {
     pub version: isize,
     #[serde(flatten)]
-    pub root: DocumentNode
+    pub root: DocumentNode,
 }
 
 #[derive(Serialize, Debug, Default)]
 pub struct Mark {
-    #[serde(rename = "type")] 
-    pub marktype: String
+    #[serde(rename = "type")]
+    pub marktype: String,
 }
 
 #[derive(Serialize, Debug, Default)]
 pub struct DocumentNode {
-    #[serde(rename = "type")] 
+    #[serde(rename = "type")]
     pub doctype: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub text: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub marks: Vec<Mark>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub content: Vec<DocumentNode>
+    pub content: Vec<DocumentNode>,
 }
 
 #[derive(Serialize, Debug)]
