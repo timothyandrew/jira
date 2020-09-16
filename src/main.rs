@@ -3,6 +3,8 @@ use jira::model;
 use std::env;
 use std::error::Error;
 
+static CREATE_ISSUE_TEMPLATE: &'static str = include_str!("../template/create_issue.md");
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("CLI Jira Interface")
@@ -30,14 +32,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         .long("title")
                         .short("t")
                         .help("Issue title")
-                        .required(true)
                         .takes_value(true),
                 )
                 .arg(
                     Arg::with_name("description")
                         .long("description")
                         .short("d")
-                        .takes_value(true)
                         .help("Issue description"),
                 )
                 .arg(
@@ -83,12 +83,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     match matches.subcommand() {
         ("create", Some(c)) => {
+            let (title, description) = match (c.value_of("title"), c.value_of("description")) {
+                (Some(t), Some(d)) => (t.to_owned(), d.to_owned()),
+                (_, _) => {
+                    if let Some((title, description)) = jira::prompt::text_from_editor(CREATE_ISSUE_TEMPLATE).await? {
+                        (title, description)
+                    } else {
+                        panic!("An issue needs a title!");
+                    }
+                }
+            };
+
             let issue = model::Issue {
-                summary: c.value_of("title").unwrap().to_owned(),
-                description: c
-                    .value_of("description")
-                    .map(String::from)
-                    .map(jira::text_to_document),
+                summary: title,
+                description: Some(jira::text_to_document(description)),
                 labels: match c.values_of("labels") {
                     Some(l) => l.map(String::from).collect(),
                     None => Vec::new(),

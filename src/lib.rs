@@ -1,4 +1,5 @@
 pub mod model;
+pub mod prompt;
 
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
