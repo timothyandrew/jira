@@ -1,16 +1,26 @@
-use clap::{App, AppSettings, Arg, SubCommand, ArgMatches};
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use jira::model;
 use std::env;
 use std::error::Error;
+#[macro_use]
+extern crate prettytable;
+use colored::*;
+use prettytable::format;
+use prettytable::{Cell, Row, Table};
 
 static CREATE_ISSUE_TEMPLATE: &'static str = include_str!("../template/create_issue.md");
 
 // Why is `<'_>` required?
-async fn subcommand_create(args: &ArgMatches<'_>, config: &jira::ApiConfig) -> Result<(), Box<dyn Error>> {
+async fn subcommand_create(
+    args: &ArgMatches<'_>,
+    config: &jira::ApiConfig,
+) -> Result<(), Box<dyn Error>> {
     let (title, description) = match (args.value_of("title"), args.value_of("description")) {
         (Some(t), Some(d)) => (t.to_owned(), d.to_owned()),
         (_, _) => {
-            if let Some((title, description)) = jira::prompt::text_from_editor(CREATE_ISSUE_TEMPLATE).await? {
+            if let Some((title, description)) =
+                jira::prompt::text_from_editor(CREATE_ISSUE_TEMPLATE).await?
+            {
                 (title, description)
             } else {
                 panic!("An issue needs a title!");
@@ -36,9 +46,41 @@ async fn subcommand_create(args: &ArgMatches<'_>, config: &jira::ApiConfig) -> R
         project: model::Project {
             key: config.project.to_owned(),
         },
+        ..Default::default()
     };
 
     jira::create_issue(issue, &config).await?;
+
+    Ok(())
+}
+
+async fn subcommand_list(config: &jira::ApiConfig) -> Result<(), Box<dyn Error>> {
+    let results = jira::issues_assigned_to_me(&config).await?;
+
+    println!("{}", "Issues assigned to me".green());
+
+    let mut table = Table::new();
+    let format = format::FormatBuilder::new()
+        .column_separator('|')
+        .borders('|')
+        .separators(
+            &[format::LinePosition::Top, format::LinePosition::Bottom],
+            format::LineSeparator::new('-', '+', '+', '+'),
+        )
+        .padding(1, 1)
+        .build();
+    table.set_format(format);
+
+    for result in results {
+        let status = result.fields.status.map(|s| s.name);
+        table.add_row(row![
+            status.unwrap_or("<none>".to_owned()),
+            result.key,
+            result.fields.summary
+        ]);
+    }
+
+    table.printstd();
 
     Ok(())
 }
@@ -104,6 +146,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         .help("Issue components"),
                 ),
         )
+        .subcommand(SubCommand::with_name("list").about("Display a summary of relevant issues"))
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .setting(AppSettings::VersionlessSubcommands)
         .get_matches();
@@ -113,15 +156,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let subdomain = matches.value_of("subdomain").unwrap();
     let project = matches.value_of("project").unwrap();
 
-    let config = jira::ApiConfig{
+    let config = jira::ApiConfig {
         email: email.to_owned(),
         token: token.to_owned(),
         subdomain: subdomain.to_owned(),
-        project: project.to_owned()
+        project: project.to_owned(),
     };
 
     match matches.subcommand() {
         ("create", Some(args)) => subcommand_create(&args, &config).await?,
+        ("list", Some(_)) => subcommand_list(&config).await?,
         _ => panic!("Invalid subcommand"),
     }
 

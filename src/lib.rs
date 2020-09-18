@@ -46,11 +46,17 @@ struct CreateIssueResponse {
     url: String,
 }
 
+#[derive(Deserialize, Debug, Default)]
+struct IssueSearchResponse {
+    total: usize,
+    issues: Vec<model::IssueSearchResult>,
+}
+
 pub struct ApiConfig {
     pub email: String,
     pub token: String,
     pub subdomain: String,
-    pub project: String
+    pub project: String,
 }
 
 pub async fn create_issue(issue: model::Issue, config: &ApiConfig) -> Result<(), Box<dyn Error>> {
@@ -61,22 +67,60 @@ pub async fn create_issue(issue: model::Issue, config: &ApiConfig) -> Result<(),
 
     // TODO: reuse client
     let response = reqwest::Client::new()
-        .post(&format!("https://{}.atlassian.net/rest/api/3/issue", &config.subdomain))
+        .post(&format!(
+            "https://{}.atlassian.net/rest/api/3/issue",
+            &config.subdomain
+        ))
         .basic_auth(&config.email, Some(&config.token))
         .json(&request)
         .send()
         .await?;
 
-    //println!("{:?}", serde_json::to_string(&request));
-
     match response.status() {
         StatusCode::CREATED => {
             let created = response.json::<CreateIssueResponse>().await?;
-            println!("https://{}.atlassian.net/browse/{}", config.subdomain, created.key);
+            println!(
+                "https://{}.atlassian.net/browse/{}",
+                config.subdomain, created.key
+            );
             Ok(())
         }
         code => Err(Box::new(ApiError::new(&format!(
             "Got a {} when attempting to create an issue",
+            code
+        )))),
+    }
+}
+
+pub async fn issues_assigned_to_me(
+    config: &ApiConfig,
+) -> Result<Vec<model::IssueSearchResult>, Box<dyn Error>> {
+    let search_jql = "assignee = currentUser() AND (status != Closed AND status != Done)";
+
+    // TODO: reuse client
+    let request = reqwest::Client::new()
+        .get(&format!(
+            "https://{}.atlassian.net/rest/api/3/search",
+            &config.subdomain
+        ))
+        .query(&[
+            ("jql", &search_jql[..]),
+            (
+                "fields",
+                "labels,components,issuetype,summary,status,project",
+            ),
+        ])
+        .basic_auth(&config.email, Some(&config.token));
+
+    let response = request.send().await?;
+
+    match response.status() {
+        StatusCode::OK => {
+            let results = response.json::<IssueSearchResponse>().await?;
+            Ok(results.issues)
+        }
+        code => Err(Box::new(ApiError::new(&format!(
+            "Got a {} when attempting to list issues assigned to me",
             code
         )))),
     }

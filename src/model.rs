@@ -1,34 +1,34 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Default)]
 pub struct IssueType {
     pub name: String,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Component {
     pub name: String,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Default)]
 pub struct Project {
     pub key: String,
 }
 
-#[derive(Serialize, Debug, Default)]
+#[derive(Deserialize, Serialize, Debug, Default)]
 pub struct Document {
     pub version: isize,
     #[serde(flatten)]
     pub root: DocumentNode,
 }
 
-#[derive(Serialize, Debug, Default)]
+#[derive(Deserialize, Serialize, Debug, Default)]
 pub struct Mark {
     #[serde(rename = "type")]
     pub marktype: String,
 }
 
-#[derive(Serialize, Debug, Default)]
+#[derive(Deserialize, Serialize, Debug, Default)]
 pub struct DocumentNode {
     #[serde(rename = "type")]
     pub doctype: String,
@@ -40,7 +40,12 @@ pub struct DocumentNode {
     pub content: Vec<DocumentNode>,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Default)]
+pub struct IssueStatus {
+    pub name: String,
+}
+
+#[derive(Deserialize, Serialize, Debug, Default)]
 pub struct Issue {
     pub summary: String,
     pub project: Project,
@@ -51,4 +56,12 @@ pub struct Issue {
     pub issuetype: IssueType,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub components: Vec<Component>,
+    pub status: Option<IssueStatus>,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct IssueSearchResult {
+    pub id: String,
+    pub key: String,
+    pub fields: Issue,
 }
