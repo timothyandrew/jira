@@ -1,9 +1,47 @@
-use clap::{App, AppSettings, Arg, SubCommand};
+use clap::{App, AppSettings, Arg, SubCommand, ArgMatches};
 use jira::model;
 use std::env;
 use std::error::Error;
 
 static CREATE_ISSUE_TEMPLATE: &'static str = include_str!("../template/create_issue.md");
+
+// Why is `<'_>` required?
+async fn subcommand_create(args: &ArgMatches<'_>, config: &jira::ApiConfig) -> Result<(), Box<dyn Error>> {
+    let (title, description) = match (args.value_of("title"), args.value_of("description")) {
+        (Some(t), Some(d)) => (t.to_owned(), d.to_owned()),
+        (_, _) => {
+            if let Some((title, description)) = jira::prompt::text_from_editor(CREATE_ISSUE_TEMPLATE).await? {
+                (title, description)
+            } else {
+                panic!("An issue needs a title!");
+            }
+        }
+    };
+
+    let issue = model::Issue {
+        summary: title,
+        description: Some(jira::text_to_document(description)),
+        labels: match args.values_of("labels") {
+            Some(l) => l.map(String::from).collect(),
+            None => Vec::new(),
+        },
+        issuetype: model::IssueType {
+            name: String::from(args.value_of("issuetype").unwrap()),
+        },
+        components: args
+            .values_of("components")
+            .unwrap()
+            .map(|c| model::Component { name: c.to_owned() })
+            .collect(),
+        project: model::Project {
+            key: config.project.to_owned(),
+        },
+    };
+
+    jira::create_issue(issue, &config).await?;
+
+    Ok(())
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -78,44 +116,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let config = jira::ApiConfig{
         email: email.to_owned(),
         token: token.to_owned(),
-        subdomain: subdomain.to_owned()
+        subdomain: subdomain.to_owned(),
+        project: project.to_owned()
     };
 
     match matches.subcommand() {
-        ("create", Some(c)) => {
-            let (title, description) = match (c.value_of("title"), c.value_of("description")) {
-                (Some(t), Some(d)) => (t.to_owned(), d.to_owned()),
-                (_, _) => {
-                    if let Some((title, description)) = jira::prompt::text_from_editor(CREATE_ISSUE_TEMPLATE).await? {
-                        (title, description)
-                    } else {
-                        panic!("An issue needs a title!");
-                    }
-                }
-            };
-
-            let issue = model::Issue {
-                summary: title,
-                description: Some(jira::text_to_document(description)),
-                labels: match c.values_of("labels") {
-                    Some(l) => l.map(String::from).collect(),
-                    None => Vec::new(),
-                },
-                issuetype: model::IssueType {
-                    name: String::from(c.value_of("issuetype").unwrap()),
-                },
-                components: c
-                    .values_of("components")
-                    .unwrap()
-                    .map(|c| model::Component { name: c.to_owned() })
-                    .collect(),
-                project: model::Project {
-                    key: project.to_owned(),
-                },
-            };
-
-            jira::create_issue(issue, &config).await?;
-        }
+        ("create", Some(args)) => subcommand_create(&args, &config).await?,
         _ => panic!("Invalid subcommand"),
     }
 

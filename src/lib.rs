@@ -49,7 +49,8 @@ struct CreateIssueResponse {
 pub struct ApiConfig {
     pub email: String,
     pub token: String,
-    pub subdomain: String
+    pub subdomain: String,
+    pub project: String
 }
 
 pub async fn create_issue(issue: model::Issue, config: &ApiConfig) -> Result<(), Box<dyn Error>> {
