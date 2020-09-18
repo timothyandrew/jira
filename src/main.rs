@@ -19,7 +19,7 @@ async fn subcommand_create(
         (Some(t), Some(d)) => (t.to_owned(), d.to_owned()),
         (_, _) => {
             if let Some((title, description)) =
-                jira::prompt::text_from_editor(CREATE_ISSUE_TEMPLATE).await?
+                jira::format::text_from_editor(CREATE_ISSUE_TEMPLATE).await?
             {
                 (title, description)
             } else {
@@ -72,9 +72,12 @@ async fn subcommand_list(config: &jira::ApiConfig) -> Result<(), Box<dyn Error>>
     table.set_format(format);
 
     for result in results {
-        let status = result.fields.status.map(|s| s.name);
+        let status = result.fields.status.map(|s| {
+            jira::format::issue_type_colored(s)
+        });
+
         table.add_row(row![
-            status.unwrap_or("<none>".to_owned()),
+            br->status.unwrap_or("<none>".truecolor(20, 20, 20)),
             result.key,
             result.fields.summary
         ]);

@@ -2,8 +2,10 @@ use std::env;
 use std::error::Error;
 use std::fs;
 use std::io::Write;
+use colored::Colorize;
 use std::process::Command;
 use tempfile::NamedTempFile;
+use super::model::IssueStatus;
 
 pub async fn text_from_editor(template: &str) -> Result<Option<(String, String)>, Box<dyn Error>> {
     let editor = env::var("EDITOR").unwrap_or("nano".to_owned());
@@ -36,4 +38,16 @@ pub async fn text_from_editor(template: &str) -> Result<Option<(String, String)>
             Some((first_line.trim().to_owned(), other_lines.trim().to_owned()))
         }
     })
+}
+
+pub fn issue_type_colored(t: IssueStatus) -> colored::ColoredString {
+    let s = t.to_string();
+
+    match t {
+        IssueStatus::Closed => s.red(),
+        IssueStatus::Done => s.green(),
+        IssueStatus::InProgress => s.bright_cyan(),
+        IssueStatus::InReview => s.magenta(),
+        IssueStatus::ToDo => s.white(),
+    }
 }

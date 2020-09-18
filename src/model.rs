@@ -1,4 +1,6 @@
 use serde::{Deserialize, Serialize};
+use heck::TitleCase;
+use std::fmt;
 
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct IssueType {
@@ -40,9 +42,30 @@ pub struct DocumentNode {
     pub content: Vec<DocumentNode>,
 }
 
-#[derive(Deserialize, Serialize, Debug, Default)]
-pub struct IssueStatus {
-    pub name: String,
+// TODO: This can vary based on Jira installation, so make this more dynamic
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(tag = "name")]
+pub enum IssueStatus {
+    #[serde(rename = "To Do")] 
+    ToDo,
+    #[serde(rename = "In Progress")] 
+    InProgress,
+    #[serde(rename = "In Review")] 
+    InReview,
+    Closed,
+    Done
+}
+
+impl Default for IssueStatus {
+    fn default() -> Self { IssueStatus::ToDo }
+}
+
+impl fmt::Display for IssueStatus {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = format!("{:?}", self);
+        let s = s.to_title_case();
+        write!(f, "{}", s)
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Default)]
