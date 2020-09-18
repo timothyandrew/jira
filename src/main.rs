@@ -6,7 +6,7 @@ use std::error::Error;
 extern crate prettytable;
 use colored::*;
 use prettytable::format;
-use prettytable::{Cell, Row, Table};
+use prettytable::{Table};
 
 static CREATE_ISSUE_TEMPLATE: &'static str = include_str!("../template/create_issue.md");
 
