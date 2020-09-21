@@ -109,6 +109,7 @@ pub struct IssueTransition {
     pub id: usize
 }
 
+// TODO: Don't hardcode these IDs
 impl From<&str> for IssueTransition {
     fn from(s: &str) -> Self {
         let id = match s {
