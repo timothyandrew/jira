@@ -1,5 +1,5 @@
-pub mod model;
 pub mod format;
+pub mod model;
 
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
@@ -66,15 +66,15 @@ pub async fn create_issue(issue: model::Issue, config: &ApiConfig) -> Result<(),
     };
 
     // TODO: reuse client
-    let response = reqwest::Client::new()
+    let request = reqwest::Client::new()
         .post(&format!(
             "https://{}.atlassian.net/rest/api/3/issue",
             &config.subdomain
         ))
         .basic_auth(&config.email, Some(&config.token))
-        .json(&request)
-        .send()
-        .await?;
+        .json(&request);
+
+    let response = request.send().await?;
 
     match response.status() {
         StatusCode::CREATED => {
@@ -86,8 +86,9 @@ pub async fn create_issue(issue: model::Issue, config: &ApiConfig) -> Result<(),
             Ok(())
         }
         code => Err(Box::new(ApiError::new(&format!(
-            "Got a {} when attempting to create an issue",
-            code
+            "Got a {} when attempting to create an issue, {}",
+            code,
+            response.text().await?
         )))),
     }
 }
@@ -120,8 +121,9 @@ pub async fn issues_assigned_to_me(
             Ok(results.issues)
         }
         code => Err(Box::new(ApiError::new(&format!(
-            "Got a {} when attempting to list issues assigned to me",
-            code
+            "Got a {} when attempting to list issues assigned to me, {}",
+            code,
+            response.text().await?
         )))),
     }
 }

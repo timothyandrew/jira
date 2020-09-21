@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use heck::TitleCase;
+use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Deserialize, Serialize, Debug, Default)]
@@ -46,18 +46,20 @@ pub struct DocumentNode {
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(tag = "name")]
 pub enum IssueStatus {
-    #[serde(rename = "To Do")] 
+    #[serde(rename = "To Do")]
     ToDo,
-    #[serde(rename = "In Progress")] 
+    #[serde(rename = "In Progress")]
     InProgress,
-    #[serde(rename = "In Review")] 
+    #[serde(rename = "In Review")]
     InReview,
     Closed,
-    Done
+    Done,
 }
 
 impl Default for IssueStatus {
-    fn default() -> Self { IssueStatus::ToDo }
+    fn default() -> Self {
+        IssueStatus::ToDo
+    }
 }
 
 impl fmt::Display for IssueStatus {
@@ -66,6 +68,11 @@ impl fmt::Display for IssueStatus {
         let s = s.to_title_case();
         write!(f, "{}", s)
     }
+}
+
+#[derive(Deserialize, Serialize, Debug, Default)]
+pub struct IssueParent {
+    pub key: String,
 }
 
 #[derive(Deserialize, Serialize, Debug, Default)]
@@ -79,7 +86,9 @@ pub struct Issue {
     pub issuetype: IssueType,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub components: Vec<Component>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<IssueStatus>,
+    pub parent: Option<IssueParent>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]

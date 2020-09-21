@@ -6,7 +6,7 @@ use std::error::Error;
 extern crate prettytable;
 use colored::*;
 use prettytable::format;
-use prettytable::{Table};
+use prettytable::Table;
 
 static CREATE_ISSUE_TEMPLATE: &'static str = include_str!("../template/create_issue.md");
 
@@ -17,13 +17,14 @@ async fn subcommand_create(
 ) -> Result<(), Box<dyn Error>> {
     let (title, description) = match (args.value_of("title"), args.value_of("description")) {
         (Some(t), Some(d)) => (t.to_owned(), d.to_owned()),
+        (Some(t), None) => (t.to_owned(), "".to_owned()),
         (_, _) => {
             if let Some((title, description)) =
                 jira::format::text_from_editor(CREATE_ISSUE_TEMPLATE).await?
             {
                 (title, description)
             } else {
-                panic!("An issue needs a title!");
+                panic!("Aborting: issue title wasn't provided.");
             }
         }
     };
@@ -46,7 +47,17 @@ async fn subcommand_create(
         project: model::Project {
             key: config.project.to_owned(),
         },
-        ..Default::default()
+        ..model::Issue::default()
+    };
+
+    let issue = match args.value_of("parent") {
+        Some(parent) => model::Issue {
+            parent: Some(model::IssueParent {
+                key: parent.to_owned(),
+            }),
+            ..issue
+        },
+        None => issue,
     };
 
     jira::create_issue(issue, &config).await?;
@@ -72,12 +83,11 @@ async fn subcommand_list(config: &jira::ApiConfig) -> Result<(), Box<dyn Error>>
     table.set_format(format);
 
     for result in results {
-        let status = result.fields.status.map(|s| {
-            jira::format::issue_type_colored(s)
-        });
+        let status = result.fields.status.unwrap_or_default();
+        let status = jira::format::issue_type_colored(status);
 
         table.add_row(row![
-            br->status.unwrap_or("<none>".truecolor(20, 20, 20)),
+            br->status,
             result.key,
             result.fields.summary
         ]);
@@ -121,12 +131,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     Arg::with_name("description")
                         .long("description")
                         .short("d")
+                        .takes_value(true)
                         .help("Issue description"),
                 )
                 .arg(
                     Arg::with_name("issuetype")
                         .long("issue-type")
-                        .short("p")
+                        .short("y")
                         .default_value("Task")
                         .takes_value(true)
                         .help("Issue type")
@@ -147,6 +158,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         .required(true)
                         .default_value("Capture")
                         .help("Issue components"),
+                )
+                .arg(
+                    Arg::with_name("parent")
+                        .long("parent")
+                        .short("p")
+                        .takes_value(true)
+                        .required_if("issuetype", "Sub-task")
+                        .help("Parent issue (if creating a sub-task)"),
                 ),
         )
         .subcommand(SubCommand::with_name("list").about("Display a summary of relevant issues"))
