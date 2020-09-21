@@ -65,6 +65,18 @@ async fn subcommand_create(
     Ok(())
 }
 
+async fn subcommand_transition(
+    args: &ArgMatches<'_>,
+    config: &jira::ApiConfig,
+) -> Result<(), Box<dyn Error>> {
+    let issue_key = args.value_of("issue").unwrap();
+    let transition = args.value_of("transition").unwrap();
+
+    jira::update_issue_status(issue_key, transition.into(), config).await?;
+
+    Ok(())
+}
+
 async fn subcommand_take(
     args: &ArgMatches<'_>,
     config: &jira::ApiConfig,
@@ -190,6 +202,27 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         .help("The issue to assign to yourself"),
                 ),
         )
+        .subcommand(
+            SubCommand::with_name("transition")
+                .about("Change/transition issue status")
+                .arg(
+                    Arg::with_name("issue")
+                        .long("issue")
+                        .short("i")
+                        .takes_value(true)
+                        .required(true)
+                        .help("The issue to transition"),
+                )
+                .arg(
+                    Arg::with_name("transition")
+                        .long("transition-to")
+                        .short("t")
+                        .takes_value(true)
+                        .required(true)
+                        .possible_values(&["todo", "in-progress", "review", "closed", "done"])
+                        .help("Status to transition the issue to"),
+                ),
+        )
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .setting(AppSettings::VersionlessSubcommands)
         .get_matches();
@@ -210,6 +243,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         ("create", Some(args)) => subcommand_create(&args, &config).await?,
         ("list", Some(_)) => subcommand_list(&config).await?,
         ("take", Some(args)) => subcommand_take(&args, &config).await?,
+        ("transition", Some(args)) => subcommand_transition(&args, &config).await?,
         _ => panic!("Invalid subcommand"),
     }
 

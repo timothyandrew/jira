@@ -103,3 +103,23 @@ pub struct User {
     #[serde(rename = "accountId")]
     pub account_id: String,
 }
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct IssueTransition {
+    pub id: usize
+}
+
+impl From<&str> for IssueTransition {
+    fn from(s: &str) -> Self {
+        let id = match s {
+            "todo" => 11,
+            "in-progress" => 21,
+            "review" => 51,
+            "closed" => 41,
+            "done" => 31,
+            _ => panic!("Invalid status!")
+        };
+
+        IssueTransition { id }
+    }
+}

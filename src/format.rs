@@ -61,7 +61,7 @@ pub fn issue_type_colored(t: IssueStatus) -> colored::ColoredString {
         IssueStatus::Closed => s.red(),
         IssueStatus::Done => s.green(),
         IssueStatus::InProgress => s.bright_cyan(),
-        IssueStatus::InReview => s.magenta(),
+        IssueStatus::InReview => s.bright_purple(),
         IssueStatus::ToDo => s.white(),
     }
 }
