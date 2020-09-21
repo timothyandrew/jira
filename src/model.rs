@@ -97,3 +97,9 @@ pub struct IssueSearchResult {
     pub key: String,
     pub fields: Issue,
 }
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct User {
+    #[serde(rename = "accountId")]
+    pub account_id: String,
+}

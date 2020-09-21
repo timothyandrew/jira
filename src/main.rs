@@ -65,6 +65,15 @@ async fn subcommand_create(
     Ok(())
 }
 
+async fn subcommand_take(
+    args: &ArgMatches<'_>,
+    config: &jira::ApiConfig,
+) -> Result<(), Box<dyn Error>> {
+    let issue_key = args.value_of("issue").unwrap();
+    jira::assign_issue_to_myself(issue_key, &config).await?;
+    Ok(())
+}
+
 async fn subcommand_list(config: &jira::ApiConfig) -> Result<(), Box<dyn Error>> {
     let results = jira::issues_assigned_to_me(&config).await?;
 
@@ -169,6 +178,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 ),
         )
         .subcommand(SubCommand::with_name("list").about("Display a summary of relevant issues"))
+        .subcommand(
+            SubCommand::with_name("take")
+                .about("Assign an issue to yourself")
+                .arg(
+                    Arg::with_name("issue")
+                        .long("issue")
+                        .short("i")
+                        .takes_value(true)
+                        .required(true)
+                        .help("The issue to assign to yourself"),
+                ),
+        )
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .setting(AppSettings::VersionlessSubcommands)
         .get_matches();
@@ -188,6 +209,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     match matches.subcommand() {
         ("create", Some(args)) => subcommand_create(&args, &config).await?,
         ("list", Some(_)) => subcommand_list(&config).await?,
+        ("take", Some(args)) => subcommand_take(&args, &config).await?,
         _ => panic!("Invalid subcommand"),
     }
 

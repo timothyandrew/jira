@@ -1,7 +1,7 @@
 pub mod format;
 pub mod model;
 
-use reqwest::StatusCode;
+use reqwest::{Client, Method, RequestBuilder, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
@@ -33,6 +33,12 @@ impl Error for ApiError {
 }
 
 #[derive(Serialize, Debug)]
+struct AssignIssueRequest {
+    #[serde(rename = "accountId")]
+    account_id: String,
+}
+
+#[derive(Serialize, Debug)]
 struct CreateIssueRequest {
     fields: model::Issue,
     update: HashMap<String, String>,
@@ -59,21 +65,73 @@ pub struct ApiConfig {
     pub project: String,
 }
 
+fn build_request(path: &str, method: Method, config: &ApiConfig) -> RequestBuilder {
+    Client::new()
+        .request(
+            method,
+            &format!(
+                "https://{}.atlassian.net/rest/api/3/{}",
+                &config.subdomain, path
+            ),
+        )
+        .basic_auth(&config.email, Some(&config.token))
+}
+
+pub async fn get_myself(config: &ApiConfig) -> Result<model::User, Box<dyn Error>> {
+    let request = build_request("/myself", Method::GET, &config);
+    let response = request.send().await?;
+
+    match response.status() {
+        StatusCode::OK => {
+            let user = response.json::<model::User>().await?;
+            Ok(user)
+        }
+        code => Err(Box::new(ApiError::new(&format!(
+            "Got a {} when attempting to fetch myself, {}",
+            code,
+            response.text().await?
+        )))),
+    }
+}
+
+pub async fn assign_issue_to_myself(
+    issue_key: &str,
+    config: &ApiConfig,
+) -> Result<(), Box<dyn Error>> {
+    let user = get_myself(&config).await?;
+
+    let request = AssignIssueRequest {
+        account_id: user.account_id,
+    };
+
+    let request = build_request(
+        &format!("/issue/{}/assignee", issue_key),
+        Method::PUT,
+        &config,
+    )
+    .json(&request);
+
+    let response = request.send().await?;
+
+    match response.status() {
+        StatusCode::NO_CONTENT => {
+            Ok(())
+        }
+        code => Err(Box::new(ApiError::new(&format!(
+            "Got a {} when attempting to assign issue to myself, {}",
+            code,
+            response.text().await?
+        )))),
+    }
+}
+
 pub async fn create_issue(issue: model::Issue, config: &ApiConfig) -> Result<(), Box<dyn Error>> {
     let request = CreateIssueRequest {
         fields: issue,
         update: HashMap::new(),
     };
 
-    // TODO: reuse client
-    let request = reqwest::Client::new()
-        .post(&format!(
-            "https://{}.atlassian.net/rest/api/3/issue",
-            &config.subdomain
-        ))
-        .basic_auth(&config.email, Some(&config.token))
-        .json(&request);
-
+    let request = build_request("/issue", Method::POST, &config).json(&request);
     let response = request.send().await?;
 
     match response.status() {
@@ -99,19 +157,13 @@ pub async fn issues_assigned_to_me(
     let search_jql = "assignee = currentUser() AND (status != Closed AND status != Done)";
 
     // TODO: reuse client
-    let request = reqwest::Client::new()
-        .get(&format!(
-            "https://{}.atlassian.net/rest/api/3/search",
-            &config.subdomain
-        ))
-        .query(&[
-            ("jql", &search_jql[..]),
-            (
-                "fields",
-                "labels,components,issuetype,summary,status,project",
-            ),
-        ])
-        .basic_auth(&config.email, Some(&config.token));
+    let request = build_request("/search", Method::GET, &config).query(&[
+        ("jql", &search_jql[..]),
+        (
+            "fields",
+            "labels,components,issuetype,summary,status,project",
+        ),
+    ]);
 
     let response = request.send().await?;
 
