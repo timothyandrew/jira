@@ -87,7 +87,7 @@ async fn subcommand_take(
 }
 
 async fn subcommand_list(config: &jira::ApiConfig) -> Result<(), Box<dyn Error>> {
-    let results = jira::issues_assigned_to_me(&config).await?;
+    let mut results = jira::issues_assigned_to_me(&config).await?;
 
     println!("{}", "Issues assigned to me".green());
 
@@ -103,14 +103,33 @@ async fn subcommand_list(config: &jira::ApiConfig) -> Result<(), Box<dyn Error>>
         .build();
     table.set_format(format);
 
+    results.sort_by(|x, y| {
+        let x_parent = match &x.fields.parent {
+            Some(parent) => &parent.key[..],
+            None => ""
+        };
+
+        let y_parent = match &y.fields.parent {
+            Some(parent) => &parent.key[..],
+            None => ""
+        };
+
+        format!("{}{}", x_parent, x.key).cmp(&format!("{}{}", y_parent, y.key))
+    });
+
     for result in results {
         let status = result.fields.status.unwrap_or_default();
         let status = jira::format::issue_type_colored(status);
 
+        let summary = match result.fields.parent {
+            Some(_) => format!("| {}", result.fields.summary).truecolor(180, 180, 180),
+            None => result.fields.summary.white()
+        };
+
         table.add_row(row![
             br->status,
             result.key,
-            result.fields.summary
+            summary
         ]);
     }
 

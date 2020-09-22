@@ -191,7 +191,7 @@ pub async fn issues_assigned_to_me(
         ("jql", &search_jql[..]),
         (
             "fields",
-            "labels,components,issuetype,summary,status,project",
+            "labels,components,issuetype,summary,status,project,parent",
         ),
     ]);
 
