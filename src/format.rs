@@ -1,9 +1,9 @@
 use super::model::IssueStatus;
 use colored::Colorize;
-use regex::Regex;
 use prettytable::format;
 use prettytable::Table;
 use prettytable::{cell, row};
+use regex::Regex;
 use std::env;
 use std::error::Error;
 use std::fs;
@@ -100,7 +100,12 @@ pub fn issue_table(issue: super::model::IssueSearchResult) {
     }
 
     if issue.fields.components.len() > 0 {
-        let components = issue.fields.components.iter().map(|c| c.name.to_owned()).collect::<Vec<_>>();
+        let components = issue
+            .fields
+            .components
+            .iter()
+            .map(|c| c.name.to_owned())
+            .collect::<Vec<_>>();
 
         table.add_row(row![
             br->"Components".dimmed(),
@@ -123,8 +128,18 @@ pub fn issue_table(issue: super::model::IssueSearchResult) {
     if let Some(prs) = issue.pull_requests {
         let mut pr_description = String::new();
         for pr in &prs {
-            let name = Regex::new(r"(\[[A-Z]+-\d+\]\s)?(.*)").unwrap().captures(&pr.name).unwrap().get(2).unwrap();
-            let url = Regex::new(r"github.com/[^/]*/[^/]*/pull/(\d+)").unwrap().captures(&pr.url).unwrap().get(1).unwrap();
+            let name = Regex::new(r"(\[[A-Z]+-\d+\]\s)?(.*)")
+                .unwrap()
+                .captures(&pr.name)
+                .unwrap()
+                .get(2)
+                .unwrap();
+            let url = Regex::new(r"github.com/[^/]*/[^/]*/pull/(\d+)")
+                .unwrap()
+                .captures(&pr.url)
+                .unwrap()
+                .get(1)
+                .unwrap();
             pr_description.push_str(&format!("• {} (#{})\n", name.as_str(), url.as_str()));
         }
 

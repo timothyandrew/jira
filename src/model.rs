@@ -102,7 +102,7 @@ pub struct IssueSearchResult {
     pub id: String,
     pub key: String,
     pub fields: Issue,
-    pub pull_requests: Option<Vec<super::graphql::PullRequest>>
+    pub pull_requests: Option<Vec<super::graphql::PullRequest>>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]

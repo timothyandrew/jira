@@ -1,3 +1,6 @@
+//! This covers an undocumented/internal GraphQL API that Jira uses for it's own frontend.
+//! This looks to be the only way to fetch a list of PRs associated with an issue.
+
 use reqwest::{Client, Method, StatusCode};
 use serde::{Deserialize, Serialize};
 
@@ -26,7 +29,7 @@ struct GetIssuePrsRequest {
 pub enum PullRequestStatus {
     Open,
     Closed,
-    Merged
+    Merged,
 }
 
 #[serde(rename_all = "camelCase")]
@@ -35,7 +38,7 @@ pub struct PullRequest {
     pub name: String,
     pub url: String,
     pub status: PullRequestStatus,
-    pub last_update: String
+    pub last_update: String,
 }
 
 #[serde(rename_all = "camelCase")]
@@ -43,41 +46,41 @@ pub struct PullRequest {
 struct Branch {
     name: String,
     url: String,
-    pull_requests: Vec<PullRequest>
+    pull_requests: Vec<PullRequest>,
 }
 
 #[derive(Deserialize, Debug)]
 struct Repository {
     name: String,
-    branches: Vec<Branch>
+    branches: Vec<Branch>,
 }
 
 #[derive(Deserialize, Debug)]
 struct DevInfoInstanceType {
-    repository: Vec<Repository>
+    repository: Vec<Repository>,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct DevInfoDetails {
-    instance_types: Vec<DevInfoInstanceType>
+    instance_types: Vec<DevInfoInstanceType>,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct DevInfo {
-    details: DevInfoDetails
+    details: DevInfoDetails,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ResponseData {
-    pub development_information: DevInfo
+    pub development_information: DevInfo,
 }
 
 #[derive(Deserialize, Debug)]
 struct Response {
-    data: ResponseData
+    data: ResponseData,
 }
 
 pub async fn get_issue_pull_requests(
@@ -110,7 +113,12 @@ pub async fn get_issue_pull_requests(
             let mut pull_requests: Vec<PullRequest> = Vec::new();
 
             // Ugh
-            let instance = result.data.development_information.details.instance_types.first();
+            let instance = result
+                .data
+                .development_information
+                .details
+                .instance_types
+                .first();
 
             if let Some(instance) = instance {
                 let repo = instance.repository.first().unwrap();
@@ -119,7 +127,7 @@ pub async fn get_issue_pull_requests(
                         // TODO: Don't clone
                         pull_requests.push(pr.clone());
                     }
-                };
+                }
 
                 Ok(Some(pull_requests))
             } else {

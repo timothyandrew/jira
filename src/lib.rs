@@ -187,7 +187,7 @@ pub async fn get_issue(
         StatusCode::OK => {
             let result = response.json::<model::IssueSearchResult>().await?;
             let pull_requests = graphql::get_issue_pull_requests(&result, config).await?;
-            Ok(model::IssueSearchResult{
+            Ok(model::IssueSearchResult {
                 pull_requests,
                 ..result
             })
