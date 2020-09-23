@@ -1,0 +1,224 @@
+query DevDetailsDialog($issueId: ID!) {
+  developmentInformation(issueId: $issueId) {
+    details {
+      instanceTypes {
+        id
+        name
+        type
+        typeName
+        isSingleInstance
+        baseUrl
+        devStatusErrorMessages
+        repository {
+          name
+          avatarUrl
+          description
+          url
+          parent {
+            name
+            url
+          }
+          branches {
+            name
+            url
+            createReviewUrl
+            createPullRequestUrl
+            lastCommit {
+              url
+              displayId
+              timestamp
+            }
+            pullRequests {
+              name
+              url
+              status
+              lastUpdate
+            }
+            reviews {
+              state
+              url
+              id
+            }
+          }
+          commits {
+            id
+            displayId
+            url
+            createReviewUrl
+            timestamp
+            isMerge
+            message
+            author {
+              name
+              avatarUrl
+            }
+            files {
+              linesAdded
+              linesRemoved
+              changeType
+              url
+              path
+            }
+            reviews {
+              id
+              url
+              state
+            }
+          }
+          pullRequests {
+            id
+            url
+            name
+            branchName
+            branchUrl
+            lastUpdate
+            status
+            author {
+              name
+              avatarUrl
+            }
+            reviewers {
+              name
+              avatarUrl
+              isApproved
+            }
+          }
+        }
+        danglingPullRequests {
+          id
+          url
+          name
+          branchName
+          branchUrl
+          lastUpdate
+          status
+          author {
+            name
+            avatarUrl
+          }
+          reviewers {
+            name
+            avatarUrl
+            isApproved
+          }
+        }
+        buildProviders {
+          id
+          name
+          url
+          description
+          avatarUrl
+          builds {
+            id
+            buildNumber
+            name
+            description
+            url
+            state
+            testSummary {
+              totalNumber
+              numberPassed
+              numberFailed
+              numberSkipped
+            }
+            lastUpdated
+            references {
+              name
+              uri
+            }
+          }
+        }
+      }
+      deploymentProviders {
+        id
+        name
+        homeUrl
+        logoUrl
+        deployments {
+          displayName
+          url
+          state
+          lastUpdated
+          pipelineId
+          pipelineDisplayName
+          pipelineUrl
+          environment {
+            id
+            type
+            displayName
+          }
+        }
+      }
+      featureFlagProviders {
+        id
+        createFlagTemplateUrl
+        linkFlagTemplateUrl
+        featureFlags {
+          id
+          key
+          displayName
+          providerId
+          details {
+            url
+            lastUpdated
+            environment {
+              name
+              type
+            }
+            status {
+              enabled
+              defaultValue
+              rollout {
+                percentage
+                text
+                rules
+              }
+            }
+          }
+        }
+      }
+      remoteLinksByType {
+        providers {
+          id
+          name
+          homeUrl
+          logoUrl
+          documentationUrl
+          actions {
+            id
+            label {
+              value
+            }
+            templateUrl
+          }
+        }
+        types {
+          type
+          remoteLinks {
+            id
+            providerId
+            displayName
+            url
+            type
+            description
+            status {
+              appearance
+              label
+            }
+            actionIds
+            attributeMap {
+              key
+              value
+            }
+          }
+        }
+      }
+
+      embeddedMarketplace {
+        shouldDisplayForBuilds
+        shouldDisplayForDeployments
+        shouldDisplayForFeatureFlags
+      }
+    }
+  }
+}

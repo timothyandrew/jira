@@ -83,6 +83,16 @@ async fn subcommand_take(
     Ok(())
 }
 
+async fn subcommand_show(
+    args: &ArgMatches<'_>,
+    config: &jira::ApiConfig,
+) -> Result<(), Box<dyn Error>> {
+    let issue_key = args.value_of("issue").unwrap();
+    let result = jira::get_issue(issue_key, config).await?;
+    jira::format::issue_table(result);
+    Ok(())
+}
+
 async fn subcommand_open(
     args: &ArgMatches<'_>,
     config: &jira::ApiConfig,
@@ -104,7 +114,6 @@ async fn subcommand_open(
         .unwrap();
     }
 
-
     Ok(())
 }
 
@@ -116,22 +125,22 @@ async fn subcommand_list(
         ("backlog", Some(_)) => {
             println!("{}", "Issues in the backlog".yellow());
             let results = jira::search::backlog_issues(&config).await?;
-            jira::format::issue_table(results);
+            jira::format::issues_table(results);
         }
         ("me", Some(_)) => {
             println!("{}", "Issues assigned to me".green());
             let results = jira::search::issues_assigned_to_me(&config).await?;
-            jira::format::issue_table(results);
+            jira::format::issues_table(results);
         }
         ("sprint", Some(_)) => {
             println!("{}", "Issues in the current sprint".blue());
             let results = jira::search::sprint_issues(&config).await?;
-            jira::format::issue_table(results);
+            jira::format::issues_table(results);
         }
         _ => {
             println!("{}", "Issues assigned to me".green());
             let results = jira::search::issues_assigned_to_me(&config).await?;
-            jira::format::issue_table(results);
+            jira::format::issues_table(results);
         }
     }
 
@@ -252,6 +261,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 ),
         )
         .subcommand(
+            SubCommand::with_name("show")
+                .about("View a single issue")
+                .arg(
+                    Arg::with_name("issue")
+                        .long("issue")
+                        .short("i")
+                        .takes_value(true)
+                        .required(true)
+                        .help("The issue (key) to show details for"),
+                ),
+        )
+        .subcommand(
             SubCommand::with_name("transition")
                 .about("Change/transition issue status")
                 .arg(
@@ -293,6 +314,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         ("list", Some(args)) => subcommand_list(&args, &config).await?,
         ("take", Some(args)) => subcommand_take(&args, &config).await?,
         ("transition", Some(args)) => subcommand_transition(&args, &config).await?,
+        ("show", Some(args)) => subcommand_show(&args, &config).await?,
         ("open", Some(args)) => subcommand_open(&args, &config).await?,
         _ => panic!("Invalid subcommand"),
     }

@@ -36,10 +36,10 @@ pub struct DocumentNode {
     pub doctype: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub text: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub marks: Vec<Mark>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub content: Vec<DocumentNode>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub marks: Option<Vec<Mark>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub content: Option<Vec<DocumentNode>>,
 }
 
 // TODO: This can vary based on Jira installation, so make this more dynamic
@@ -79,6 +79,9 @@ pub struct IssueParent {
 }
 
 #[derive(Deserialize, Serialize, Debug, Default)]
+pub struct PullRequestMetadata {}
+
+#[derive(Deserialize, Serialize, Debug, Default)]
 pub struct Issue {
     pub summary: String,
     pub project: Project,
@@ -99,6 +102,7 @@ pub struct IssueSearchResult {
     pub id: String,
     pub key: String,
     pub fields: Issue,
+    pub pull_requests: Option<Vec<super::graphql::PullRequest>>
 }
 
 #[derive(Deserialize, Serialize, Debug)]

@@ -1,5 +1,6 @@
 use super::model::IssueStatus;
 use colored::Colorize;
+use regex::Regex;
 use prettytable::format;
 use prettytable::Table;
 use prettytable::{cell, row};
@@ -71,7 +72,72 @@ pub fn issue_type_colored(t: IssueStatus) -> colored::ColoredString {
     }
 }
 
-pub fn issue_table(mut issues: Vec<super::model::IssueSearchResult>) {
+pub fn issue_table(issue: super::model::IssueSearchResult) {
+    let mut table = Table::new();
+    let format = format::FormatBuilder::new()
+        .column_separator('|')
+        .padding(1, 1)
+        .build();
+    table.set_format(format);
+
+    table.add_row(row![
+        br->"Title".dimmed(),
+        issue.fields.summary.bold()
+    ]);
+
+    if issue.fields.labels.len() > 0 {
+        table.add_row(row![
+            br->"Labels".dimmed(),
+            issue.fields.labels.concat()
+        ]);
+    }
+
+    if let Some(status) = issue.fields.status {
+        table.add_row(row![
+            br->"Status".dimmed(),
+            format!("{}", status)
+        ]);
+    }
+
+    if issue.fields.components.len() > 0 {
+        let components = issue.fields.components.iter().map(|c| c.name.to_owned()).collect::<Vec<_>>();
+
+        table.add_row(row![
+            br->"Components".dimmed(),
+            components.join(", ")
+        ]);
+    }
+
+    table.add_row(row![
+        br->"Type".dimmed(),
+        issue.fields.issuetype.name
+    ]);
+
+    if let Some(parent) = issue.fields.parent {
+        table.add_row(row![
+            br->"Parent".dimmed(),
+            format!("{}", parent.key)
+        ]);
+    }
+
+    if let Some(prs) = issue.pull_requests {
+        let mut pr_description = String::new();
+        for pr in &prs {
+            let name = Regex::new(r"(\[[A-Z]+-\d+\]\s)?(.*)").unwrap().captures(&pr.name).unwrap().get(2).unwrap();
+            let url = Regex::new(r"github.com/[^/]*/[^/]*/pull/(\d+)").unwrap().captures(&pr.url).unwrap().get(1).unwrap();
+            pr_description.push_str(&format!("• {} (#{})\n", name.as_str(), url.as_str()));
+        }
+
+        table.add_row(row![
+            br->"PRs".dimmed(),
+            pr_description
+        ]);
+    };
+
+    table.printstd();
+}
+
+pub fn issues_table(mut issues: Vec<super::model::IssueSearchResult>) {
     let mut table = Table::new();
     let format = format::FormatBuilder::new()
         .column_separator('|')

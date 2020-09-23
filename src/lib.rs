@@ -1,4 +1,5 @@
 pub mod format;
+pub mod graphql;
 pub mod model;
 pub mod search;
 
@@ -175,21 +176,45 @@ pub async fn create_issue(issue: model::Issue, config: &ApiConfig) -> Result<(),
     }
 }
 
+pub async fn get_issue(
+    issue_key: &str,
+    config: &ApiConfig,
+) -> Result<model::IssueSearchResult, Box<dyn Error>> {
+    let request = build_request(&format!("/issue/{}", issue_key), Method::GET, &config);
+    let response = request.send().await?;
+
+    match response.status() {
+        StatusCode::OK => {
+            let result = response.json::<model::IssueSearchResult>().await?;
+            let pull_requests = graphql::get_issue_pull_requests(&result, config).await?;
+            Ok(model::IssueSearchResult{
+                pull_requests,
+                ..result
+            })
+        }
+        code => Err(Box::new(ApiError::new(&format!(
+            "Got a {} when attempting to fetch issue, {}",
+            code,
+            response.text().await?
+        )))),
+    }
+}
+
 // TODO: Improve this so it converts markdown in `text` into Jira's document format.
 pub fn text_to_document(text: String) -> model::Document {
     model::Document {
         version: 1,
         root: model::DocumentNode {
             doctype: String::from("doc"),
-            content: vec![model::DocumentNode {
+            content: Some(vec![model::DocumentNode {
                 doctype: String::from("paragraph"),
-                content: vec![model::DocumentNode {
+                content: Some(vec![model::DocumentNode {
                     doctype: String::from("text"),
                     text: Some(text),
                     ..Default::default()
-                }],
+                }]),
                 ..Default::default()
-            }],
+            }]),
             ..Default::default()
         },
     }
