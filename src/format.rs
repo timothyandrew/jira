@@ -1,8 +1,8 @@
 use super::model::IssueStatus;
+use colored::Colorize;
 use prettytable::format;
 use prettytable::Table;
-use prettytable::{row,cell};
-use colored::Colorize;
+use prettytable::{cell, row};
 use std::env;
 use std::error::Error;
 use std::fs;

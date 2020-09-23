@@ -1,8 +1,9 @@
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
+use colored::*;
 use jira::model;
+use regex::Regex;
 use std::env;
 use std::error::Error;
-use colored::*;
 
 static CREATE_ISSUE_TEMPLATE: &'static str = include_str!("../template/create_issue.md");
 
@@ -82,7 +83,35 @@ async fn subcommand_take(
     Ok(())
 }
 
-async fn subcommand_list(args: &ArgMatches<'_>, config: &jira::ApiConfig) -> Result<(), Box<dyn Error>> {
+async fn subcommand_open(
+    args: &ArgMatches<'_>,
+    config: &jira::ApiConfig,
+) -> Result<(), Box<dyn Error>> {
+    let issue_key = args.value_of("issue").unwrap();
+    let issue_pattern = Regex::new(r"^[A-Z]+\-\d+$").unwrap();
+
+    if issue_pattern.is_match(issue_key) {
+        open::that(format!(
+            "https://{}.atlassian.net/browse/{}",
+            config.subdomain, issue_key
+        ))
+        .unwrap();
+    } else {
+        open::that(format!(
+            "https://{}.atlassian.net/browse/{}-{}",
+            config.subdomain, config.project, issue_key
+        ))
+        .unwrap();
+    }
+
+
+    Ok(())
+}
+
+async fn subcommand_list(
+    args: &ArgMatches<'_>,
+    config: &jira::ApiConfig,
+) -> Result<(), Box<dyn Error>> {
     match args.subcommand() {
         ("backlog", Some(_)) => {
             println!("{}", "Issues in the backlog".yellow());
@@ -211,6 +240,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 ),
         )
         .subcommand(
+            SubCommand::with_name("open")
+                .about("Open an issue in your default browser")
+                .arg(
+                    Arg::with_name("issue")
+                        .long("issue")
+                        .short("i")
+                        .takes_value(true)
+                        .required(true)
+                        .help("The issue (key, with or without the project prefix) to open"),
+                ),
+        )
+        .subcommand(
             SubCommand::with_name("transition")
                 .about("Change/transition issue status")
                 .arg(
@@ -252,6 +293,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         ("list", Some(args)) => subcommand_list(&args, &config).await?,
         ("take", Some(args)) => subcommand_take(&args, &config).await?,
         ("transition", Some(args)) => subcommand_transition(&args, &config).await?,
+        ("open", Some(args)) => subcommand_open(&args, &config).await?,
         _ => panic!("Invalid subcommand"),
     }
 

@@ -1,10 +1,10 @@
 use reqwest::{Method, StatusCode};
-use serde::{Deserialize};
+use serde::Deserialize;
 
 use std::error::Error;
 
-use super::{ApiConfig,ApiError};
 use super::model;
+use super::{ApiConfig, ApiError};
 
 #[derive(Deserialize, Debug, Default)]
 struct IssueSearchResponse {
@@ -14,14 +14,14 @@ struct IssueSearchResponse {
 
 struct IssueSearchPageCounter {
     pub start_at: usize,
-    pub issues_seen: usize
+    pub issues_seen: usize,
 }
 
 impl Default for IssueSearchPageCounter {
-    fn default() -> Self { 
+    fn default() -> Self {
         Self {
             start_at: 0,
-            issues_seen: 0
+            issues_seen: 0,
         }
     }
 }
@@ -54,7 +54,7 @@ async fn search_issues(
     let mut start_at = 0;
     let mut results = Vec::new();
 
-    loop { 
+    loop {
         let mut page = search_issues_single_page(search_jql, start_at, config).await?;
         start_at = start_at + page.issues.len();
         results.append(&mut page.issues);
@@ -65,7 +65,7 @@ async fn search_issues(
         } else {
             break;
         }
-    };
+    }
 
     Ok(results)
 }
