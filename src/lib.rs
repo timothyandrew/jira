@@ -1,5 +1,6 @@
 pub mod format;
 pub mod model;
+pub mod search;
 
 use reqwest::{Client, Method, RequestBuilder, StatusCode};
 use serde::{Deserialize, Serialize};
@@ -40,7 +41,7 @@ struct AssignIssueRequest {
 
 #[derive(Serialize, Debug)]
 struct TransitionIssueRequest {
-    transition: model::IssueTransition
+    transition: model::IssueTransition,
 }
 
 #[derive(Serialize, Debug)]
@@ -55,12 +56,6 @@ struct CreateIssueResponse {
     key: String,
     #[serde(rename = "self")]
     url: String,
-}
-
-#[derive(Deserialize, Debug, Default)]
-struct IssueSearchResponse {
-    total: usize,
-    issues: Vec<model::IssueSearchResult>,
 }
 
 pub struct ApiConfig {
@@ -93,14 +88,13 @@ pub async fn update_issue_status(
         &format!("/issue/{}/transitions", issue_key),
         Method::POST,
         &config,
-    ).json(&request);
+    )
+    .json(&request);
 
     let response = request.send().await?;
 
     match response.status() {
-        StatusCode::NO_CONTENT => {
-            Ok(())
-        }
+        StatusCode::NO_CONTENT => Ok(()),
         code => Err(Box::new(ApiError::new(&format!(
             "Got a {} when attempting to transition issue status, {}",
             code,
@@ -175,35 +169,6 @@ pub async fn create_issue(issue: model::Issue, config: &ApiConfig) -> Result<(),
         }
         code => Err(Box::new(ApiError::new(&format!(
             "Got a {} when attempting to create an issue, {}",
-            code,
-            response.text().await?
-        )))),
-    }
-}
-
-pub async fn issues_assigned_to_me(
-    config: &ApiConfig,
-) -> Result<Vec<model::IssueSearchResult>, Box<dyn Error>> {
-    let search_jql = "assignee = currentUser() AND (status != Closed AND status != Done)";
-
-    // TODO: reuse client
-    let request = build_request("/search", Method::GET, &config).query(&[
-        ("jql", &search_jql[..]),
-        (
-            "fields",
-            "labels,components,issuetype,summary,status,project,parent",
-        ),
-    ]);
-
-    let response = request.send().await?;
-
-    match response.status() {
-        StatusCode::OK => {
-            let results = response.json::<IssueSearchResponse>().await?;
-            Ok(results.issues)
-        }
-        code => Err(Box::new(ApiError::new(&format!(
-            "Got a {} when attempting to list issues assigned to me, {}",
             code,
             response.text().await?
         )))),

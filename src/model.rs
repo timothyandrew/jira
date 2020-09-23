@@ -106,7 +106,7 @@ pub struct User {
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct IssueTransition {
-    pub id: usize
+    pub id: usize,
 }
 
 // TODO: Don't hardcode these IDs
@@ -118,7 +118,7 @@ impl From<&str> for IssueTransition {
             "review" => 51,
             "closed" => 41,
             "done" => 31,
-            _ => panic!("Invalid status!")
+            _ => panic!("Invalid status!"),
         };
 
         IssueTransition { id }

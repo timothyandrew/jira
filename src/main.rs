@@ -87,9 +87,7 @@ async fn subcommand_take(
 }
 
 async fn subcommand_list(config: &jira::ApiConfig) -> Result<(), Box<dyn Error>> {
-    let mut results = jira::issues_assigned_to_me(&config).await?;
-
-    println!("{}", "Issues assigned to me".green());
+    let mut results = jira::search::issues_assigned_to_me(&config).await?;
 
     let mut table = Table::new();
     let format = format::FormatBuilder::new()
@@ -106,12 +104,12 @@ async fn subcommand_list(config: &jira::ApiConfig) -> Result<(), Box<dyn Error>>
     results.sort_by(|x, y| {
         let x_parent = match &x.fields.parent {
             Some(parent) => &parent.key[..],
-            None => ""
+            None => "",
         };
 
         let y_parent = match &y.fields.parent {
             Some(parent) => &parent.key[..],
-            None => ""
+            None => "",
         };
 
         format!("{}{}", x_parent, x.key).cmp(&format!("{}{}", y_parent, y.key))
@@ -123,7 +121,7 @@ async fn subcommand_list(config: &jira::ApiConfig) -> Result<(), Box<dyn Error>>
 
         let summary = match result.fields.parent {
             Some(_) => format!("| {}", result.fields.summary).truecolor(180, 180, 180),
-            None => result.fields.summary.white()
+            None => result.fields.summary.white(),
         };
 
         table.add_row(row![
@@ -208,7 +206,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         .help("Parent issue (if creating a sub-task)"),
                 ),
         )
-        .subcommand(SubCommand::with_name("list").about("Display a summary of relevant issues"))
+        .subcommand(
+            SubCommand::with_name("list")
+                .about("Display a summary of relevant issues. Default: list issues assigned to me.")
+                .arg(
+                    Arg::with_name("backlog")
+                        .long("backlog")
+                        .short("b")
+                        .help("List all issues in the backlog"),
+                )
+                .arg(
+                    Arg::with_name("current-sprint")
+                        .long("current-sprint")
+                        .short("s")
+                        .help("List all issues in the current sprint"),
+                ),
+        )
         .subcommand(
             SubCommand::with_name("take")
                 .about("Assign an issue to yourself")
