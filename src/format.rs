@@ -1,4 +1,7 @@
 use super::model::IssueStatus;
+use prettytable::format;
+use prettytable::Table;
+use prettytable::{row,cell};
 use colored::Colorize;
 use std::env;
 use std::error::Error;
@@ -63,5 +66,53 @@ pub fn issue_type_colored(t: IssueStatus) -> colored::ColoredString {
         IssueStatus::InProgress => s.bright_cyan(),
         IssueStatus::InReview => s.bright_purple(),
         IssueStatus::ToDo => s.white(),
+        IssueStatus::Logged => s.dimmed().italic().truecolor(180, 180, 180),
+        IssueStatus::SupportTriaged => s.dimmed().italic().truecolor(180, 180, 180),
     }
+}
+
+pub fn issue_table(mut issues: Vec<super::model::IssueSearchResult>) {
+    let mut table = Table::new();
+    let format = format::FormatBuilder::new()
+        .column_separator('|')
+        .borders('|')
+        .separators(
+            &[format::LinePosition::Top, format::LinePosition::Bottom],
+            format::LineSeparator::new('-', '+', '+', '+'),
+        )
+        .padding(1, 1)
+        .build();
+    table.set_format(format);
+
+    issues.sort_by(|x, y| {
+        let x_parent = match &x.fields.parent {
+            Some(parent) => &parent.key[..],
+            None => "",
+        };
+
+        let y_parent = match &y.fields.parent {
+            Some(parent) => &parent.key[..],
+            None => "",
+        };
+
+        format!("{}{}", x_parent, x.key).cmp(&format!("{}{}", y_parent, y.key))
+    });
+
+    for issue in issues {
+        let status = issue.fields.status.unwrap_or_default();
+        let status = issue_type_colored(status);
+
+        let summary = match issue.fields.parent {
+            Some(_) => format!("| {}", issue.fields.summary).truecolor(180, 180, 180),
+            None => issue.fields.summary.white(),
+        };
+
+        table.add_row(row![
+            br->status,
+            issue.key,
+            summary
+        ]);
+    }
+
+    table.printstd();
 }

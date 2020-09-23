@@ -48,8 +48,11 @@ pub struct DocumentNode {
 pub enum IssueStatus {
     #[serde(rename = "To Do")]
     ToDo,
+    Logged,
     #[serde(rename = "In Progress")]
     InProgress,
+    #[serde(rename = "Support Triaged")]
+    SupportTriaged,
     #[serde(rename = "In Review")]
     InReview,
     Closed,

@@ -2,11 +2,7 @@ use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use jira::model;
 use std::env;
 use std::error::Error;
-#[macro_use]
-extern crate prettytable;
 use colored::*;
-use prettytable::format;
-use prettytable::Table;
 
 static CREATE_ISSUE_TEMPLATE: &'static str = include_str!("../template/create_issue.md");
 
@@ -86,52 +82,29 @@ async fn subcommand_take(
     Ok(())
 }
 
-async fn subcommand_list(config: &jira::ApiConfig) -> Result<(), Box<dyn Error>> {
-    let mut results = jira::search::issues_assigned_to_me(&config).await?;
-
-    let mut table = Table::new();
-    let format = format::FormatBuilder::new()
-        .column_separator('|')
-        .borders('|')
-        .separators(
-            &[format::LinePosition::Top, format::LinePosition::Bottom],
-            format::LineSeparator::new('-', '+', '+', '+'),
-        )
-        .padding(1, 1)
-        .build();
-    table.set_format(format);
-
-    results.sort_by(|x, y| {
-        let x_parent = match &x.fields.parent {
-            Some(parent) => &parent.key[..],
-            None => "",
-        };
-
-        let y_parent = match &y.fields.parent {
-            Some(parent) => &parent.key[..],
-            None => "",
-        };
-
-        format!("{}{}", x_parent, x.key).cmp(&format!("{}{}", y_parent, y.key))
-    });
-
-    for result in results {
-        let status = result.fields.status.unwrap_or_default();
-        let status = jira::format::issue_type_colored(status);
-
-        let summary = match result.fields.parent {
-            Some(_) => format!("| {}", result.fields.summary).truecolor(180, 180, 180),
-            None => result.fields.summary.white(),
-        };
-
-        table.add_row(row![
-            br->status,
-            result.key,
-            summary
-        ]);
+async fn subcommand_list(args: &ArgMatches<'_>, config: &jira::ApiConfig) -> Result<(), Box<dyn Error>> {
+    match args.subcommand() {
+        ("backlog", Some(_)) => {
+            println!("{}", "Issues in the backlog".yellow());
+            let results = jira::search::backlog_issues(&config).await?;
+            jira::format::issue_table(results);
+        }
+        ("me", Some(_)) => {
+            println!("{}", "Issues assigned to me".green());
+            let results = jira::search::issues_assigned_to_me(&config).await?;
+            jira::format::issue_table(results);
+        }
+        ("sprint", Some(_)) => {
+            println!("{}", "Issues in the current sprint".blue());
+            let results = jira::search::sprint_issues(&config).await?;
+            jira::format::issue_table(results);
+        }
+        _ => {
+            println!("{}", "Issues assigned to me".green());
+            let results = jira::search::issues_assigned_to_me(&config).await?;
+            jira::format::issue_table(results);
+        }
     }
-
-    table.printstd();
 
     Ok(())
 }
@@ -209,16 +182,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .subcommand(
             SubCommand::with_name("list")
                 .about("Display a summary of relevant issues. Default: list issues assigned to me.")
-                .arg(
-                    Arg::with_name("backlog")
-                        .long("backlog")
-                        .short("b")
+                .subcommand(
+                    SubCommand::with_name("backlog")
+                        .alias("b")
                         .help("List all issues in the backlog"),
                 )
-                .arg(
-                    Arg::with_name("current-sprint")
-                        .long("current-sprint")
-                        .short("s")
+                .subcommand(
+                    SubCommand::with_name("me")
+                        .alias("m")
+                        .help("List all issues assigned to me"),
+                )
+                .subcommand(
+                    SubCommand::with_name("sprint")
+                        .alias("s")
                         .help("List all issues in the current sprint"),
                 ),
         )
@@ -273,7 +249,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     match matches.subcommand() {
         ("create", Some(args)) => subcommand_create(&args, &config).await?,
-        ("list", Some(_)) => subcommand_list(&config).await?,
+        ("list", Some(args)) => subcommand_list(&args, &config).await?,
         ("take", Some(args)) => subcommand_take(&args, &config).await?,
         ("transition", Some(args)) => subcommand_transition(&args, &config).await?,
         _ => panic!("Invalid subcommand"),
