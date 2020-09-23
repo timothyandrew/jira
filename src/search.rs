@@ -12,6 +12,20 @@ struct IssueSearchResponse {
     issues: Vec<model::IssueSearchResult>,
 }
 
+struct IssueSearchPageCounter {
+    pub start_at: usize,
+    pub issues_seen: usize
+}
+
+impl Default for IssueSearchPageCounter {
+    fn default() -> Self { 
+        Self {
+            start_at: 0,
+            issues_seen: 0
+        }
+    }
+}
+
 pub async fn backlog_issues(
     config: &ApiConfig,
 ) -> Result<Vec<model::IssueSearchResult>, Box<dyn Error>> {
@@ -37,9 +51,34 @@ async fn search_issues(
     search_jql: &str,
     config: &ApiConfig,
 ) -> Result<Vec<model::IssueSearchResult>, Box<dyn Error>> {
+    let mut start_at = 0;
+    let mut results = Vec::new();
+
+    loop { 
+        let mut page = search_issues_single_page(search_jql, start_at, config).await?;
+        start_at = start_at + page.issues.len();
+        results.append(&mut page.issues);
+
+        if page.total > start_at {
+            // Do nothing, fetch another page
+            eprintln!("Fetching a page of results starting at index: {}", start_at);
+        } else {
+            break;
+        }
+    };
+
+    Ok(results)
+}
+
+async fn search_issues_single_page(
+    search_jql: &str,
+    start_at: usize,
+    config: &ApiConfig,
+) -> Result<IssueSearchResponse, Box<dyn Error>> {
     // TODO: reuse client
     let request = super::build_request("/search", Method::GET, &config).query(&[
         ("jql", &search_jql[..]),
+        ("startAt", &start_at.to_string()),
         (
             "fields",
             "labels,components,issuetype,summary,status,project,parent",
@@ -51,7 +90,7 @@ async fn search_issues(
     match response.status() {
         StatusCode::OK => {
             let results = response.json::<IssueSearchResponse>().await?;
-            Ok(results.issues)
+            Ok(results)
         }
         code => Err(Box::new(ApiError::new(&format!(
             "Got a {} when attempting to list issues assigned to me, {}",
