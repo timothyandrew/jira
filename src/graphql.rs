@@ -3,6 +3,8 @@
 
 use reqwest::{Client, Method, StatusCode};
 use serde::{Deserialize, Serialize};
+use std::fmt;
+use heck::TitleCase;
 
 use std::error::Error;
 
@@ -30,6 +32,14 @@ pub enum PullRequestStatus {
     Open,
     Closed,
     Merged,
+}
+
+impl fmt::Display for PullRequestStatus {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = format!("{:?}", self);
+        let s = s.to_title_case();
+        write!(f, "{}", s)
+    }
 }
 
 #[serde(rename_all = "camelCase")]

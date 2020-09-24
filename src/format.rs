@@ -1,5 +1,6 @@
 use super::model::IssueStatus;
 use colored::Colorize;
+use super::graphql::PullRequestStatus;
 use prettytable::format;
 use prettytable::Table;
 use prettytable::{cell, row};
@@ -126,7 +127,18 @@ pub fn issue_table(issue: super::model::IssueSearchResult) {
     }
 
     if let Some(prs) = issue.pull_requests {
-        let mut pr_description = String::new();
+        let mut pr_table = Table::new();
+        let format = format::FormatBuilder::new()
+            .column_separator('|')
+            .padding(1, 1)
+            .borders('|')
+            .separators(
+                &[format::LinePosition::Top, format::LinePosition::Bottom],
+                format::LineSeparator::new('-', '+', '+', '+'),
+            )
+            .build();
+        pr_table.set_format(format);
+
         for pr in &prs {
             let name = Regex::new(r"(\[[A-Z]+-\d+\]\s)?(.*)")
                 .unwrap()
@@ -140,12 +152,17 @@ pub fn issue_table(issue: super::model::IssueSearchResult) {
                 .unwrap()
                 .get(1)
                 .unwrap();
-            pr_description.push_str(&format!("• {} (#{})\n", name.as_str(), url.as_str()));
+
+            pr_table.add_row(row![
+                format!("#{}", url.as_str()).bold(),
+                name.as_str().italic(),
+                l->pr_status_colored(&pr.status)
+            ]);
         }
 
         table.add_row(row![
             br->"PRs".dimmed(),
-            pr_description
+            pr_table
         ]);
     };
 
@@ -196,4 +213,14 @@ pub fn issues_table(mut issues: Vec<super::model::IssueSearchResult>) {
     }
 
     table.printstd();
+}
+
+fn pr_status_colored(pr: &PullRequestStatus) -> colored::ColoredString {
+    let s = pr.to_string();
+
+    match pr {
+        PullRequestStatus::Closed => s.red(),
+        PullRequestStatus::Open => s.green(),
+        PullRequestStatus::Merged => s.truecolor(186, 150, 255),
+    }
 }
