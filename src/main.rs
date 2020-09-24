@@ -29,20 +29,21 @@ async fn subcommand_create(
         summary: title,
         description: Some(jira::text_to_document(description)),
         labels: match args.values_of("labels") {
-            Some(l) => l.map(String::from).collect(),
-            None => Vec::new(),
+            Some(l) => Some(l.map(String::from).collect()),
+            None => None,
         },
         issuetype: model::IssueType {
             name: String::from(args.value_of("issuetype").unwrap()),
         },
-        components: args
-            .values_of("components")
-            .unwrap()
-            .map(|c| model::Component { name: c.to_owned() })
-            .collect(),
-        project: model::Project {
+        components: Some(
+            args.values_of("components")
+                .unwrap()
+                .map(|c| model::Component { name: c.to_owned() })
+                .collect(),
+        ),
+        project: Some(model::Project {
             key: config.project.to_owned(),
-        },
+        }),
         ..model::Issue::default()
     };
 
@@ -50,6 +51,7 @@ async fn subcommand_create(
         Some(parent) => model::Issue {
             parent: Some(model::IssueParent {
                 key: parent.to_owned(),
+                ..Default::default()
             }),
             ..issue
         },

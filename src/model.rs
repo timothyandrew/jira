@@ -76,6 +76,7 @@ impl fmt::Display for IssueStatus {
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct IssueParent {
     pub key: String,
+    pub fields: Option<Box<Issue>>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Default)]
@@ -84,14 +85,15 @@ pub struct PullRequestMetadata {}
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct Issue {
     pub summary: String,
-    pub project: Project,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub project: Option<Project>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<Document>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub labels: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub labels: Option<Vec<String>>,
     pub issuetype: IssueType,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub components: Vec<Component>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub components: Option<Vec<Component>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<IssueStatus>,
     pub parent: Option<IssueParent>,

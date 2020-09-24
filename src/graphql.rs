@@ -1,10 +1,10 @@
 //! This covers an undocumented/internal GraphQL API that Jira uses for it's own frontend.
 //! This looks to be the only way to fetch a list of PRs associated with an issue.
 
+use heck::TitleCase;
 use reqwest::{Client, Method, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use heck::TitleCase;
 
 use std::error::Error;
 

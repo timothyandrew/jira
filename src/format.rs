@@ -1,6 +1,6 @@
+use super::graphql::PullRequestStatus;
 use super::model::IssueStatus;
 use colored::Colorize;
-use super::graphql::PullRequestStatus;
 use prettytable::format;
 use prettytable::Table;
 use prettytable::{cell, row};
@@ -86,11 +86,13 @@ pub fn issue_table(issue: super::model::IssueSearchResult) {
         issue.fields.summary.bold()
     ]);
 
-    if issue.fields.labels.len() > 0 {
-        table.add_row(row![
-            br->"Labels".dimmed(),
-            issue.fields.labels.concat()
-        ]);
+    if let Some(labels) = issue.fields.labels {
+        if labels.len() > 0 {
+            table.add_row(row![
+                br->"Labels".dimmed(),
+                labels.concat()
+            ]);
+        }
     }
 
     if let Some(status) = issue.fields.status {
@@ -100,18 +102,18 @@ pub fn issue_table(issue: super::model::IssueSearchResult) {
         ]);
     }
 
-    if issue.fields.components.len() > 0 {
-        let components = issue
-            .fields
-            .components
-            .iter()
-            .map(|c| c.name.to_owned())
-            .collect::<Vec<_>>();
+    if let Some(components) = issue.fields.components {
+        if components.len() > 0 {
+            let components = components
+                .iter()
+                .map(|c| c.name.to_owned())
+                .collect::<Vec<_>>();
 
-        table.add_row(row![
-            br->"Components".dimmed(),
-            components.join(", ")
-        ]);
+            table.add_row(row![
+                br->"Components".dimmed(),
+                components.join(", ")
+            ]);
+        }
     }
 
     table.add_row(row![
