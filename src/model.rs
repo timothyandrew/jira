@@ -80,7 +80,10 @@ pub struct IssueParent {
 }
 
 #[derive(Deserialize, Serialize, Debug, Default)]
-pub struct PullRequestMetadata {}
+#[serde(rename_all = "camelCase")]
+pub struct IssueAssignee {
+    pub display_name: String
+}
 
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct Issue {
@@ -97,6 +100,7 @@ pub struct Issue {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<IssueStatus>,
     pub parent: Option<IssueParent>,
+    pub assignee: Option<IssueAssignee>
 }
 
 #[derive(Deserialize, Serialize, Debug)]

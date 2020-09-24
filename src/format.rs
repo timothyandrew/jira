@@ -102,6 +102,13 @@ pub fn issue_table(issue: super::model::IssueSearchResult) {
         ]);
     }
 
+    if let Some(assignee) = issue.fields.assignee {
+        table.add_row(row![
+            br->"Assignee".dimmed(),
+            format!("{}", assignee.display_name)
+        ]);
+    }
+
     if let Some(components) = issue.fields.components {
         if components.len() > 0 {
             let components = components
@@ -207,10 +214,17 @@ pub fn issues_table(mut issues: Vec<super::model::IssueSearchResult>) {
             None => issue.fields.summary.white(),
         };
 
+        let assignee = if let Some(assignee) = issue.fields.assignee {
+            assignee.display_name.to_owned().white()
+        } else {
+            "<none>".dimmed()
+        };
+
         table.add_row(row![
             br->status,
             issue.key,
-            summary
+            summary,
+            assignee
         ]);
     }
 

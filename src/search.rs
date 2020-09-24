@@ -81,7 +81,7 @@ async fn search_issues_single_page(
         ("startAt", &start_at.to_string()),
         (
             "fields",
-            "labels,components,issuetype,summary,status,project,parent",
+            "assignee,labels,components,issuetype,summary,status,project,parent",
         ),
     ]);
 
