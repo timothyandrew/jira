@@ -242,8 +242,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 .about("Assign an issue to yourself")
                 .arg(
                     Arg::with_name("issue")
-                        .long("issue")
-                        .short("i")
+                        .index(1)
+                        .value_name("ISSUE_KEY")
                         .takes_value(true)
                         .required(true)
                         .help("The issue (key, with or without the project prefix) to assign to yourself"),
@@ -254,8 +254,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 .about("Open an issue in your default browser")
                 .arg(
                     Arg::with_name("issue")
-                        .long("issue")
-                        .short("i")
+                        .index(1)
+                        .value_name("ISSUE_KEY")
                         .takes_value(true)
                         .required(true)
                         .help("The issue (key, with or without the project prefix) to open"),
@@ -266,10 +266,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 .about("View a single issue")
                 .arg(
                     Arg::with_name("issue")
-                        .long("issue")
-                        .short("i")
+                        .index(1)
                         .takes_value(true)
                         .required(true)
+                        .value_name("ISSUE_KEY")
                         .help("The issue (key, with or without the project prefix) to show details for"),
                 ),
         )
@@ -278,9 +278,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 .about("Change/transition issue status")
                 .arg(
                     Arg::with_name("issue")
-                        .long("issue")
-                        .short("i")
+                        .index(1)
                         .takes_value(true)
+                        .value_name("ISSUE_KEY")
                         .required(true)
                         .help("The issue (key, with or without the project prefix) to transition"),
                 )
