@@ -186,16 +186,16 @@ pub fn issues_table(mut issues: Vec<super::model::IssueSearchResult>) {
 
     issues.sort_by(|x, y| {
         let x_parent = match &x.fields.parent {
-            Some(parent) => &parent.key[..],
-            None => "",
+            Some(parent) => format!("{:?}{}", parent.fields.as_ref().unwrap().status, parent.key),
+            None => String::new()
         };
 
         let y_parent = match &y.fields.parent {
-            Some(parent) => &parent.key[..],
-            None => "",
+            Some(parent) => format!("{:?}{}", parent.fields.as_ref().unwrap().status, parent.key),
+            None => String::new()
         };
 
-        format!("{}{}", x_parent, x.key).cmp(&format!("{}{}", y_parent, y.key))
+        format!("{}{:?}{}", x_parent, x.fields.status, x.key).cmp(&format!("{}{:?}{}", y_parent, y.fields.status, y.key))
     });
 
     for issue in issues {
