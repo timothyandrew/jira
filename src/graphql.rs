@@ -30,6 +30,7 @@ struct GetIssuePrsRequest {
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PullRequestStatus {
     Open,
+    #[serde(rename = "DECLINED")]
     Closed,
     Merged,
 }
