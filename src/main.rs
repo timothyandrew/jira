@@ -1,7 +1,6 @@
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use colored::*;
 use jira::model;
-use regex::Regex;
 use std::env;
 use std::error::Error;
 
@@ -98,21 +97,14 @@ async fn subcommand_open(
     config: &jira::ApiConfig,
 ) -> Result<(), Box<dyn Error>> {
     let issue_key = args.value_of("issue").unwrap();
-    let issue_pattern = Regex::new(r"^[A-Z]+\-\d+$").unwrap();
+    let issue_key = jira::util::issue_lossy_to_issue_key(issue_key, &config);
+    let issue_key = issue_key.expect("Invalid issue key!");
 
-    if issue_pattern.is_match(issue_key) {
-        open::that(format!(
-            "https://{}.atlassian.net/browse/{}",
-            config.subdomain, issue_key
-        ))
-        .unwrap();
-    } else {
-        open::that(format!(
-            "https://{}.atlassian.net/browse/{}-{}",
-            config.subdomain, config.project, issue_key
-        ))
-        .unwrap();
-    }
+    open::that(format!(
+        "https://{}.atlassian.net/browse/{}",
+        config.subdomain, issue_key
+    ))
+    .unwrap();
 
     Ok(())
 }

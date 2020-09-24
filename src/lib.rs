@@ -2,6 +2,7 @@ pub mod format;
 pub mod graphql;
 pub mod model;
 pub mod search;
+pub mod util;
 
 use reqwest::{Client, Method, RequestBuilder, StatusCode};
 use serde::{Deserialize, Serialize};
