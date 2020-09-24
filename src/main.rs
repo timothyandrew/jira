@@ -66,9 +66,12 @@ async fn subcommand_transition(
     config: &jira::ApiConfig,
 ) -> Result<(), Box<dyn Error>> {
     let issue_key = args.value_of("issue").unwrap();
+    let issue_key = jira::util::issue_lossy_to_issue_key(issue_key, &config);
+    let issue_key = issue_key.expect("Invalid issue key!");
+
     let transition = args.value_of("transition").unwrap();
 
-    jira::update_issue_status(issue_key, transition.into(), config).await?;
+    jira::update_issue_status(&issue_key, transition.into(), config).await?;
 
     Ok(())
 }
@@ -78,7 +81,10 @@ async fn subcommand_take(
     config: &jira::ApiConfig,
 ) -> Result<(), Box<dyn Error>> {
     let issue_key = args.value_of("issue").unwrap();
-    jira::assign_issue_to_myself(issue_key, &config).await?;
+    let issue_key = jira::util::issue_lossy_to_issue_key(issue_key, &config);
+    let issue_key = issue_key.expect("Invalid issue key!");
+
+    jira::assign_issue_to_myself(&issue_key, &config).await?;
     Ok(())
 }
 
@@ -87,7 +93,10 @@ async fn subcommand_show(
     config: &jira::ApiConfig,
 ) -> Result<(), Box<dyn Error>> {
     let issue_key = args.value_of("issue").unwrap();
-    let result = jira::get_issue(issue_key, config).await?;
+    let issue_key = jira::util::issue_lossy_to_issue_key(issue_key, &config);
+    let issue_key = issue_key.expect("Invalid issue key!");
+
+    let result = jira::get_issue(&issue_key, config).await?;
     jira::format::issue_table(result);
     Ok(())
 }
@@ -237,7 +246,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         .short("i")
                         .takes_value(true)
                         .required(true)
-                        .help("The issue to assign to yourself"),
+                        .help("The issue (key, with or without the project prefix) to assign to yourself"),
                 ),
         )
         .subcommand(
@@ -261,7 +270,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         .short("i")
                         .takes_value(true)
                         .required(true)
-                        .help("The issue (key) to show details for"),
+                        .help("The issue (key, with or without the project prefix) to show details for"),
                 ),
         )
         .subcommand(
@@ -273,7 +282,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         .short("i")
                         .takes_value(true)
                         .required(true)
-                        .help("The issue to transition"),
+                        .help("The issue (key, with or without the project prefix) to transition"),
                 )
                 .arg(
                     Arg::with_name("transition")
