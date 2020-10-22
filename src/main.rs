@@ -253,6 +253,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         )
         .subcommand(
             SubCommand::with_name("open")
+                .alias("o")
                 .about("Open an issue in your default browser")
                 .arg(
                     Arg::with_name("issue")
@@ -265,6 +266,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         )
         .subcommand(
             SubCommand::with_name("show")
+                .alias("s")
                 .about("View a single issue")
                 .arg(
                     Arg::with_name("issue")
@@ -277,6 +279,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         )
         .subcommand(
             SubCommand::with_name("transition")
+                .alias("t")
                 .about("Change/transition issue status")
                 .arg(
                     Arg::with_name("issue")
