@@ -144,27 +144,32 @@ async fn subcommand_list(
         ("backlog", Some(_)) => {
             println!("{}", "Issues in the backlog".yellow());
             let results = jira::search::backlog_issues(&config).await?;
-            jira::format::issues_table(results, true);
+            let table = jira::format::issues_table(results, true);
+            table.printstd();
         }
         ("epics", Some(_)) => {
             println!("{}", "Epics".yellow());
             let results = jira::search::epics(&config).await?;
-            jira::format::issues_table(results, false);
+            let table = jira::format::issues_table(results, false);
+            table.printstd();
         }
         ("me", Some(_)) => {
             println!("{}", "Issues assigned to me".green());
             let results = jira::search::issues_assigned_to_me(&config).await?;
-            jira::format::issues_table(results, true);
+            let table = jira::format::issues_table(results, true);
+            table.printstd();
         }
         ("sprint", Some(_)) => {
             println!("{}", "Issues in the current sprint".blue());
             let results = jira::search::sprint_issues(&config).await?;
-            jira::format::issues_table(results, true);
+            let table = jira::format::issues_table(results, true);
+            table.printstd();
         }
         _ => {
             println!("{}", "Issues assigned to me".green());
             let results = jira::search::issues_assigned_to_me(&config).await?;
-            jira::format::issues_table(results, true);
+            let table = jira::format::issues_table(results, true);
+            table.printstd();
         }
     }
 

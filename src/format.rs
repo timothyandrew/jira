@@ -135,6 +135,14 @@ pub fn issue_table(issue: super::model::IssueSearchResult) {
         ]);
     }
 
+    if let Some(epic_issues) = issue.epic_issues {
+        let sub_table = issues_table(epic_issues, true);
+        table.add_row(row![
+            br->"Epic Tickets".dimmed(),
+            sub_table
+        ]);
+    };
+
     if let Some(prs) = issue.pull_requests {
         let mut pr_table = Table::new();
         let format = format::FormatBuilder::new()
@@ -178,7 +186,7 @@ pub fn issue_table(issue: super::model::IssueSearchResult) {
     table.printstd();
 }
 
-pub fn issues_table(mut issues: Vec<super::model::IssueSearchResult>, sort: bool) {
+pub fn issues_table(mut issues: Vec<super::model::IssueSearchResult>, sort: bool) -> Table {
     let mut table = Table::new();
     let format = format::FormatBuilder::new()
         .column_separator('|')
@@ -232,7 +240,7 @@ pub fn issues_table(mut issues: Vec<super::model::IssueSearchResult>, sort: bool
         ]);
     }
 
-    table.printstd();
+    table
 }
 
 fn pr_status_colored(pr: &PullRequestStatus) -> colored::ColoredString {

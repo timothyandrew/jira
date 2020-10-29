@@ -33,6 +33,14 @@ pub async fn epics(
     search_issues(search_jql, config).await
 }
 
+pub async fn epic_issues(
+    config: &ApiConfig,
+    epic: &model::IssueSearchResult
+) -> Result<Vec<model::IssueSearchResult>, Box<dyn Error>> {
+    let search_jql = &format!("'Epic Link' = {}", epic.key);
+    search_issues(search_jql, config).await
+}
+
 pub async fn backlog_issues(
     config: &ApiConfig,
 ) -> Result<Vec<model::IssueSearchResult>, Box<dyn Error>> {

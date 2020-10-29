@@ -187,11 +187,24 @@ pub async fn get_issue(
     match response.status() {
         StatusCode::OK => {
             let result = response.json::<model::IssueSearchResult>().await?;
+
             let pull_requests = graphql::get_issue_pull_requests(&result, config).await?;
-            Ok(model::IssueSearchResult {
+            let result = model::IssueSearchResult {
                 pull_requests,
                 ..result
-            })
+            };
+
+            let result = if result.fields.issuetype.name == "Epic" {
+                let epic_issues = Some(search::epic_issues(&config, &result).await?);
+                model::IssueSearchResult{
+                    epic_issues,
+                    ..result
+                }
+            } else {
+                result
+            };
+
+            Ok(result)
         }
         code => Err(Box::new(ApiError::new(&format!(
             "Got a {} when attempting to fetch issue, {}",
