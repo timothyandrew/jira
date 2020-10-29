@@ -233,7 +233,7 @@ pub fn issues_table(mut issues: Vec<super::model::IssueSearchResult>, sort: bool
 
         table.add_row(row![
             c->issue.fields.issuetype.name,
-            bc->status,
+            br->status,
             bc->issue.key,
             summary,
             assignee
