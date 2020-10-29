@@ -201,18 +201,20 @@ pub fn issues_table(mut issues: Vec<super::model::IssueSearchResult>, sort: bool
 
     if sort {
         issues.sort_by(|x, y| {
+            let x_type = &x.fields.issuetype.name;
             let x_parent = match &x.fields.parent {
                 Some(parent) => format!("{:?}{}", parent.fields.as_ref().unwrap().status, parent.key),
                 None => String::new(),
             };
 
+            let y_type = &y.fields.issuetype.name;
             let y_parent = match &y.fields.parent {
                 Some(parent) => format!("{:?}{}", parent.fields.as_ref().unwrap().status, parent.key),
                 None => String::new(),
             };
 
-            format!("{}{:?}{}", x_parent, x.fields.status, x.key)
-                .cmp(&format!("{}{:?}{}", y_parent, y.fields.status, y.key))
+            format!("{}{}{:?}{}", x_type, x_parent, x.fields.status, x.key)
+                .cmp(&format!("{}{}{:?}{}", y_type, y_parent, y.fields.status, y.key))
         });
     }
 
