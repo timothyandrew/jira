@@ -25,6 +25,19 @@ async fn subcommand_create(
         }
     };
 
+    let issue_type = args.value_of("issuetype").unwrap();
+    let epic = args.value_of("epic").map(|e| {
+        let epic = jira::util::issue_lossy_to_issue_key(e, &config);
+        let epic = epic.expect("Invalid epic key!");
+        String::from(epic)
+    });
+
+    if let Some(_) = epic {
+        if !(["Task", "Bug", "Story"].contains(&issue_type)) {
+            panic!("Can't create a {} under an epic!", issue_type);
+        }
+    }
+
     let issue = model::Issue {
         summary: title,
         description: Some(jira::text_to_document(description)),
@@ -33,7 +46,7 @@ async fn subcommand_create(
             None => None,
         },
         issuetype: model::IssueType {
-            name: String::from(args.value_of("issuetype").unwrap()),
+            name: String::from(issue_type),
         },
         components: Some(
             args.values_of("components")
@@ -41,6 +54,7 @@ async fn subcommand_create(
                 .map(|c| model::Component { name: c.to_owned() })
                 .collect(),
         ),
+        epic,
         project: Some(model::Project {
             key: config.project.to_owned(),
         }),
@@ -50,7 +64,9 @@ async fn subcommand_create(
     let issue = match args.value_of("parent") {
         Some(parent) => model::Issue {
             parent: Some(model::IssueParent {
-                key: parent.to_owned(),
+                key: jira::util::issue_lossy_to_issue_key(parent, config)
+                    .expect("Invalid parent key!")
+                    .to_owned(),
                 ..Default::default()
             }),
             ..issue
@@ -128,22 +144,27 @@ async fn subcommand_list(
         ("backlog", Some(_)) => {
             println!("{}", "Issues in the backlog".yellow());
             let results = jira::search::backlog_issues(&config).await?;
-            jira::format::issues_table(results);
+            jira::format::issues_table(results, true);
+        }
+        ("epics", Some(_)) => {
+            println!("{}", "Epics".yellow());
+            let results = jira::search::epics(&config).await?;
+            jira::format::issues_table(results, false);
         }
         ("me", Some(_)) => {
             println!("{}", "Issues assigned to me".green());
             let results = jira::search::issues_assigned_to_me(&config).await?;
-            jira::format::issues_table(results);
+            jira::format::issues_table(results, true);
         }
         ("sprint", Some(_)) => {
             println!("{}", "Issues in the current sprint".blue());
             let results = jira::search::sprint_issues(&config).await?;
-            jira::format::issues_table(results);
+            jira::format::issues_table(results, true);
         }
         _ => {
             println!("{}", "Issues assigned to me".green());
             let results = jira::search::issues_assigned_to_me(&config).await?;
-            jira::format::issues_table(results);
+            jira::format::issues_table(results, true);
         }
     }
 
@@ -180,6 +201,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         .takes_value(true),
                 )
                 .arg(
+                    Arg::with_name("epic")
+                        .long("epic")
+                        .short("e")
+                        .help("Epic that this task belongs to")
+                        .takes_value(true),
+                )
+                .arg(
                     Arg::with_name("description")
                         .long("description")
                         .short("d")
@@ -193,7 +221,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         .default_value("Task")
                         .takes_value(true)
                         .help("Issue type")
-                        .possible_values(&["Task", "Bug", "Story", "Sub-task"]),
+                        .possible_values(&["Task", "Bug", "Story", "Sub-task", "Epic"]),
                 )
                 .arg(
                     Arg::with_name("labels")
@@ -227,6 +255,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     SubCommand::with_name("backlog")
                         .alias("b")
                         .help("List all issues in the backlog"),
+                )
+                .subcommand(
+                    SubCommand::with_name("epics")
+                        .alias("e")
+                        .help("List all epics"),
                 )
                 .subcommand(
                     SubCommand::with_name("me")

@@ -82,7 +82,7 @@ pub struct IssueParent {
 #[derive(Deserialize, Serialize, Debug, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct IssueAssignee {
-    pub display_name: String
+    pub display_name: String,
 }
 
 #[derive(Deserialize, Serialize, Debug, Default)]
@@ -100,7 +100,10 @@ pub struct Issue {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<IssueStatus>,
     pub parent: Option<IssueParent>,
-    pub assignee: Option<IssueAssignee>
+    pub assignee: Option<IssueAssignee>,
+    #[serde(rename = "customfield_10008")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub epic: Option<String>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]

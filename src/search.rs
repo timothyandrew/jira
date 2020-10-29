@@ -26,6 +26,13 @@ impl Default for IssueSearchPageCounter {
     }
 }
 
+pub async fn epics(
+    config: &ApiConfig,
+) -> Result<Vec<model::IssueSearchResult>, Box<dyn Error>> {
+    let search_jql = "issuetype = Epic AND status not in (Closed, Done) AND component in (Capture,iOS,Android,Mobile) order by updated ASC";
+    search_issues(search_jql, config).await
+}
+
 pub async fn backlog_issues(
     config: &ApiConfig,
 ) -> Result<Vec<model::IssueSearchResult>, Box<dyn Error>> {

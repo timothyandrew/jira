@@ -178,7 +178,7 @@ pub fn issue_table(issue: super::model::IssueSearchResult) {
     table.printstd();
 }
 
-pub fn issues_table(mut issues: Vec<super::model::IssueSearchResult>) {
+pub fn issues_table(mut issues: Vec<super::model::IssueSearchResult>, sort: bool) {
     let mut table = Table::new();
     let format = format::FormatBuilder::new()
         .column_separator('|')
@@ -191,19 +191,22 @@ pub fn issues_table(mut issues: Vec<super::model::IssueSearchResult>) {
         .build();
     table.set_format(format);
 
-    issues.sort_by(|x, y| {
-        let x_parent = match &x.fields.parent {
-            Some(parent) => format!("{:?}{}", parent.fields.as_ref().unwrap().status, parent.key),
-            None => String::new()
-        };
+    if sort {
+        issues.sort_by(|x, y| {
+            let x_parent = match &x.fields.parent {
+                Some(parent) => format!("{:?}{}", parent.fields.as_ref().unwrap().status, parent.key),
+                None => String::new(),
+            };
 
-        let y_parent = match &y.fields.parent {
-            Some(parent) => format!("{:?}{}", parent.fields.as_ref().unwrap().status, parent.key),
-            None => String::new()
-        };
+            let y_parent = match &y.fields.parent {
+                Some(parent) => format!("{:?}{}", parent.fields.as_ref().unwrap().status, parent.key),
+                None => String::new(),
+            };
 
-        format!("{}{:?}{}", x_parent, x.fields.status, x.key).cmp(&format!("{}{:?}{}", y_parent, y.fields.status, y.key))
-    });
+            format!("{}{:?}{}", x_parent, x.fields.status, x.key)
+                .cmp(&format!("{}{:?}{}", y_parent, y.fields.status, y.key))
+        });
+    }
 
     for issue in issues {
         let status = issue.fields.status.unwrap_or_default();
@@ -221,8 +224,9 @@ pub fn issues_table(mut issues: Vec<super::model::IssueSearchResult>) {
         };
 
         table.add_row(row![
-            br->status,
-            issue.key,
+            c->issue.fields.issuetype.name,
+            bc->status,
+            bc->issue.key,
             summary,
             assignee
         ]);
