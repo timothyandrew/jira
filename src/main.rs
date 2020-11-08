@@ -1,4 +1,5 @@
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
+use dotenv;
 use colored::*;
 use jira::model;
 use std::env;
@@ -178,6 +179,8 @@ async fn subcommand_list(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    dotenv::from_filename(".jira").ok();
+
     let matches = App::new("CLI Jira Interface")
         .arg(
             Arg::with_name("subdomain")
