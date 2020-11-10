@@ -1,5 +1,6 @@
 use super::graphql::PullRequestStatus;
 use super::model::IssueStatus;
+use super::convert;
 use colored::Colorize;
 use prettytable::format;
 use prettytable::Table;
@@ -12,20 +13,20 @@ use std::io::Write;
 use std::process::Command;
 use tempfile::NamedTempFile;
 
-// Remove all lines starting with a '#'
+// Remove all lines starting with a '>'
 fn remove_commented_lines<'a>(
     lines: impl Iterator<Item = &'a str>,
 ) -> impl Iterator<Item = &'a str> {
     lines.filter(|&line| {
         if let Some(c) = line.chars().next() {
-            c != '#'
+            c != '>'
         } else {
             false
         }
     })
 }
 
-pub async fn text_from_editor(template: &str) -> Result<Option<(String, String)>, Box<dyn Error>> {
+pub async fn text_from_editor(template: &str) -> Result<Option<(String, convert::Node)>, Box<dyn Error>> {
     let editor = env::var("EDITOR").unwrap_or("nano".to_owned());
 
     let temp_file = NamedTempFile::new()?;
@@ -54,7 +55,9 @@ pub async fn text_from_editor(template: &str) -> Result<Option<(String, String)>
         (None, _) => None,
         (Some(""), _) => None,
         (Some(first_line), other_lines) => {
-            Some((first_line.trim().to_owned(), other_lines.trim().to_owned()))
+            let title = first_line.trim().to_owned();
+            let description = other_lines.trim().to_owned();
+            Some((title, convert::markdown_to_adf(&description)))
         }
     })
 }
@@ -203,18 +206,24 @@ pub fn issues_table(mut issues: Vec<super::model::IssueSearchResult>, sort: bool
         issues.sort_by(|x, y| {
             let x_type = &x.fields.issuetype.name;
             let x_parent = match &x.fields.parent {
-                Some(parent) => format!("{:?}{}", parent.fields.as_ref().unwrap().status, parent.key),
+                Some(parent) => {
+                    format!("{:?}{}", parent.fields.as_ref().unwrap().status, parent.key)
+                }
                 None => String::new(),
             };
 
             let y_type = &y.fields.issuetype.name;
             let y_parent = match &y.fields.parent {
-                Some(parent) => format!("{:?}{}", parent.fields.as_ref().unwrap().status, parent.key),
+                Some(parent) => {
+                    format!("{:?}{}", parent.fields.as_ref().unwrap().status, parent.key)
+                }
                 None => String::new(),
             };
 
-            format!("{}{}{:?}{}", x_type, x_parent, x.fields.status, x.key)
-                .cmp(&format!("{}{}{:?}{}", y_type, y_parent, y.fields.status, y.key))
+            format!("{}{}{:?}{}", x_type, x_parent, x.fields.status, x.key).cmp(&format!(
+                "{}{}{:?}{}",
+                y_type, y_parent, y.fields.status, y.key
+            ))
         });
     }
 

@@ -1,5 +1,6 @@
 use heck::TitleCase;
 use serde::{Deserialize, Serialize};
+use super::convert;
 use std::fmt;
 
 #[derive(Deserialize, Serialize, Debug, Default)]
@@ -15,31 +16,6 @@ pub struct Component {
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct Project {
     pub key: String,
-}
-
-#[derive(Deserialize, Serialize, Debug, Default)]
-pub struct Document {
-    pub version: isize,
-    #[serde(flatten)]
-    pub root: DocumentNode,
-}
-
-#[derive(Deserialize, Serialize, Debug, Default)]
-pub struct Mark {
-    #[serde(rename = "type")]
-    pub marktype: String,
-}
-
-#[derive(Deserialize, Serialize, Debug, Default)]
-pub struct DocumentNode {
-    #[serde(rename = "type")]
-    pub doctype: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub text: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub marks: Option<Vec<Mark>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub content: Option<Vec<DocumentNode>>,
 }
 
 // TODO: This can vary based on Jira installation, so make this more dynamic
@@ -91,7 +67,7 @@ pub struct Issue {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub project: Option<Project>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<Document>,
+    pub description: Option<convert::Node>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub labels: Option<Vec<String>>,
     pub issuetype: IssueType,
@@ -113,7 +89,7 @@ pub struct IssueSearchResult {
     pub fields: Issue,
     pub pull_requests: Option<Vec<super::graphql::PullRequest>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub epic_issues: Option<Vec<IssueSearchResult>>
+    pub epic_issues: Option<Vec<IssueSearchResult>>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]

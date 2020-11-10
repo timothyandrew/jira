@@ -1,9 +1,10 @@
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
-use dotenv;
 use colored::*;
+use dotenv;
 use jira::model;
 use std::env;
 use std::error::Error;
+
 
 static CREATE_ISSUE_TEMPLATE: &'static str = include_str!("../template/create_issue.md");
 
@@ -13,13 +14,16 @@ async fn subcommand_create(
     config: &jira::ApiConfig,
 ) -> Result<(), Box<dyn Error>> {
     let (title, description) = match (args.value_of("title"), args.value_of("description")) {
-        (Some(t), Some(d)) => (t.to_owned(), d.to_owned()),
-        (Some(t), None) => (t.to_owned(), "".to_owned()),
+        (Some(t), Some(d)) => (
+            t.to_owned(), 
+            Some(jira::convert::markdown_to_adf(&d.to_owned()))
+        ),
+        (Some(t), None) => (t.to_owned(), None),
         (_, _) => {
             if let Some((title, description)) =
                 jira::format::text_from_editor(CREATE_ISSUE_TEMPLATE).await?
             {
-                (title, description)
+                (title, Some(description))
             } else {
                 panic!("Aborting: issue title wasn't provided.");
             }
@@ -41,7 +45,7 @@ async fn subcommand_create(
 
     let issue = model::Issue {
         summary: title,
-        description: Some(jira::text_to_document(description)),
+        description,
         labels: match args.values_of("labels") {
             Some(l) => Some(l.map(String::from).collect()),
             None => None,

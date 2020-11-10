@@ -1,3 +1,4 @@
+pub mod convert;
 pub mod format;
 pub mod graphql;
 pub mod model;
@@ -157,6 +158,7 @@ pub async fn create_issue(issue: model::Issue, config: &ApiConfig) -> Result<(),
         update: HashMap::new(),
     };
 
+    println!("{}", serde_json::to_string(&request.fields.description.clone().unwrap()).unwrap());
     let request = build_request("/issue", Method::POST, &config).json(&request);
     let response = request.send().await?;
 
@@ -196,7 +198,7 @@ pub async fn get_issue(
 
             let result = if result.fields.issuetype.name == "Epic" {
                 let epic_issues = Some(search::epic_issues(&config, &result).await?);
-                model::IssueSearchResult{
+                model::IssueSearchResult {
                     epic_issues,
                     ..result
                 }
@@ -211,25 +213,5 @@ pub async fn get_issue(
             code,
             response.text().await?
         )))),
-    }
-}
-
-// TODO: Improve this so it converts markdown in `text` into Jira's document format.
-pub fn text_to_document(text: String) -> model::Document {
-    model::Document {
-        version: 1,
-        root: model::DocumentNode {
-            doctype: String::from("doc"),
-            content: Some(vec![model::DocumentNode {
-                doctype: String::from("paragraph"),
-                content: Some(vec![model::DocumentNode {
-                    doctype: String::from("text"),
-                    text: Some(text),
-                    ..Default::default()
-                }]),
-                ..Default::default()
-            }]),
-            ..Default::default()
-        },
     }
 }
