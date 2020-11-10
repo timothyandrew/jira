@@ -5,7 +5,6 @@ use jira::model;
 use std::env;
 use std::error::Error;
 
-
 static CREATE_ISSUE_TEMPLATE: &'static str = include_str!("../template/create_issue.md");
 
 // Why is `<'_>` required?
@@ -15,8 +14,8 @@ async fn subcommand_create(
 ) -> Result<(), Box<dyn Error>> {
     let (title, description) = match (args.value_of("title"), args.value_of("description")) {
         (Some(t), Some(d)) => (
-            t.to_owned(), 
-            Some(jira::convert::markdown_to_adf(&d.to_owned()))
+            t.to_owned(),
+            Some(jira::convert::markdown_to_adf(&d.to_owned())),
         ),
         (Some(t), None) => (t.to_owned(), None),
         (_, _) => {
@@ -59,7 +58,7 @@ async fn subcommand_create(
                 .map(|c| model::Component { name: c.to_owned() })
                 .collect(),
         ),
-        epic,
+        epic: epic.map(|e| model::IssueEpic::Key(e)),
         project: Some(model::Project {
             key: config.project.to_owned(),
         }),

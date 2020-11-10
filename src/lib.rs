@@ -158,7 +158,10 @@ pub async fn create_issue(issue: model::Issue, config: &ApiConfig) -> Result<(),
         update: HashMap::new(),
     };
 
-    println!("{}", serde_json::to_string(&request.fields.description.clone().unwrap()).unwrap());
+    println!(
+        "{}",
+        serde_json::to_string(&request.fields.description.clone().unwrap()).unwrap()
+    );
     let request = build_request("/issue", Method::POST, &config).json(&request);
     let response = request.send().await?;
 
@@ -183,29 +186,59 @@ pub async fn get_issue(
     issue_key: &str,
     config: &ApiConfig,
 ) -> Result<model::IssueSearchResult, Box<dyn Error>> {
+    let result = get_issue_simple(issue_key, config).await?;
+
+    // Enrich issue with PRs
+    let pull_requests = graphql::get_issue_pull_requests(&result, config).await?;
+    let result = model::IssueSearchResult {
+        pull_requests,
+        ..result
+    };
+
+    // Enrich issue with child issues if this issue is an epic
+    let result = if result.fields.issuetype.name == "Epic" {
+        let epic_issues = Some(search::epic_issues(&config, &result).await?);
+        model::IssueSearchResult {
+            epic_issues,
+            ..result
+        }
+    } else {
+        result
+    };
+
+    // Enrich issue with parent epic if this is part of an epic
+    let result = if let Some(epic) = &result.fields.epic {
+        match epic {
+            model::IssueEpic::Key(k) => model::IssueSearchResult {
+                fields: model::Issue {
+                    epic: Some(model::IssueEpic::Full(Box::new(
+                        get_issue_simple(&k, &config).await?,
+                    ))),
+                    ..result.fields
+                },
+                ..result
+            },
+            model::IssueEpic::Full(_) => result,
+        }
+    } else {
+        result
+    };
+
+    Ok(result)
+}
+
+async fn get_issue_simple(
+    issue_key: &str,
+    config: &ApiConfig,
+) -> Result<model::IssueSearchResult, Box<dyn Error>> {
     let request = build_request(&format!("/issue/{}", issue_key), Method::GET, &config);
     let response = request.send().await?;
 
     match response.status() {
         StatusCode::OK => {
+            // println!("{}", response.text().await?);
+            // std::process::exit(0);
             let result = response.json::<model::IssueSearchResult>().await?;
-
-            let pull_requests = graphql::get_issue_pull_requests(&result, config).await?;
-            let result = model::IssueSearchResult {
-                pull_requests,
-                ..result
-            };
-
-            let result = if result.fields.issuetype.name == "Epic" {
-                let epic_issues = Some(search::epic_issues(&config, &result).await?);
-                model::IssueSearchResult {
-                    epic_issues,
-                    ..result
-                }
-            } else {
-                result
-            };
-
             Ok(result)
         }
         code => Err(Box::new(ApiError::new(&format!(

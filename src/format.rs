@@ -1,6 +1,7 @@
-use super::graphql::PullRequestStatus;
-use super::model::IssueStatus;
 use super::convert;
+use super::graphql::PullRequestStatus;
+use super::model::IssueEpic;
+use super::model::IssueStatus;
 use colored::Colorize;
 use prettytable::format;
 use prettytable::Table;
@@ -26,7 +27,9 @@ fn remove_commented_lines<'a>(
     })
 }
 
-pub async fn text_from_editor(template: &str) -> Result<Option<(String, convert::Node)>, Box<dyn Error>> {
+pub async fn text_from_editor(
+    template: &str,
+) -> Result<Option<(String, convert::Node)>, Box<dyn Error>> {
     let editor = env::var("EDITOR").unwrap_or("nano".to_owned());
 
     let temp_file = NamedTempFile::new()?;
@@ -109,6 +112,22 @@ pub fn issue_table(issue: super::model::IssueSearchResult) {
         table.add_row(row![
             br->"Assignee".dimmed(),
             format!("{}", assignee.display_name)
+        ]);
+    }
+
+    if let Some(epic) = issue.fields.epic {
+        let epic = match epic {
+            IssueEpic::Key(k) => k,
+            IssueEpic::Full(i) => format!(
+                "{}: {}",
+                i.as_ref().key.to_owned(),
+                i.as_ref().fields.summary.to_owned()
+            ),
+        };
+
+        table.add_row(row![
+            br->"Epic".dimmed(),
+            epic
         ]);
     }
 

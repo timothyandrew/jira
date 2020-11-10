@@ -1,6 +1,6 @@
+use super::convert;
 use heck::TitleCase;
 use serde::{Deserialize, Serialize};
-use super::convert;
 use std::fmt;
 
 #[derive(Deserialize, Serialize, Debug, Default)]
@@ -61,6 +61,14 @@ pub struct IssueAssignee {
     pub display_name: String,
 }
 
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(untagged)]
+pub enum IssueEpic {
+    Key(String),
+    // UGLY
+    Full(Box<IssueSearchResult>),
+}
+
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct Issue {
     pub summary: String,
@@ -79,7 +87,7 @@ pub struct Issue {
     pub assignee: Option<IssueAssignee>,
     #[serde(rename = "customfield_10008")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub epic: Option<String>,
+    pub epic: Option<IssueEpic>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
