@@ -31,6 +31,14 @@ pub async fn epics(config: &ApiConfig) -> Result<Vec<model::IssueSearchResult>, 
     search_issues(search_jql, config).await
 }
 
+pub async fn issue_subtasks(
+    config: &ApiConfig,
+    issue_key: &str,
+) -> Result<Vec<model::IssueSearchResult>, Box<dyn Error>> {
+    let search_jql = format!("parent = {}", issue_key);
+    search_issues(&search_jql, config).await
+}
+
 pub async fn epic_issues(
     config: &ApiConfig,
     epic: &model::IssueSearchResult,

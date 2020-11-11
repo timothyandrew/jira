@@ -195,6 +195,11 @@ pub async fn get_issue(
         ..result
     };
 
+    // Enrich issue with subtasks
+    let subtasks = search::issue_subtasks(config, issue_key).await?;
+    let subtasks = Some(subtasks);
+    let result = model::IssueSearchResult { subtasks, ..result };
+
     // Enrich issue with child issues if this issue is an epic
     let result = if result.fields.issuetype.name == "Epic" {
         let epic_issues = Some(search::epic_issues(&config, &result).await?);

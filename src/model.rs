@@ -95,9 +95,14 @@ pub struct IssueSearchResult {
     pub id: String,
     pub key: String,
     pub fields: Issue,
+
+    // Enrichment
+    #[serde(skip)]
     pub pull_requests: Option<Vec<super::graphql::PullRequest>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip)]
     pub epic_issues: Option<Vec<IssueSearchResult>>,
+    #[serde(skip)]
+    pub subtasks: Option<Vec<IssueSearchResult>>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]

@@ -88,6 +88,11 @@ pub fn issue_table(issue: super::model::IssueSearchResult) {
     table.set_format(format);
 
     table.add_row(row![
+        br->"Key".dimmed(),
+        issue.key.bold()
+    ]);
+
+    table.add_row(row![
         br->"Title".dimmed(),
         issue.fields.summary.bold()
     ]);
@@ -157,8 +162,25 @@ pub fn issue_table(issue: super::model::IssueSearchResult) {
         ]);
     }
 
+    if let Some(subtasks) = issue.subtasks {
+        if subtasks.len() > 0 {
+            let sub_table = issues_table(subtasks, &IssuesTableConfig::sorted());
+            table.add_row(row![
+                br->"Subtasks".dimmed(),
+                sub_table
+            ]);
+        }
+    };
+
     if let Some(epic_issues) = issue.epic_issues {
-        let sub_table = issues_table(epic_issues, true);
+        let sub_table = issues_table(
+            epic_issues,
+            &IssuesTableConfig {
+                sort: true,
+                skip_type: true,
+                ..Default::default()
+            },
+        );
         table.add_row(row![
             br->"Epic Tickets".dimmed(),
             sub_table
@@ -208,7 +230,22 @@ pub fn issue_table(issue: super::model::IssueSearchResult) {
     table.printstd();
 }
 
-pub fn issues_table(mut issues: Vec<super::model::IssueSearchResult>, sort: bool) -> Table {
+#[derive(Debug, Default)]
+pub struct IssuesTableConfig {
+    pub sort: bool,
+    pub skip_type: bool,
+}
+
+impl IssuesTableConfig {
+    pub fn sorted() -> IssuesTableConfig {
+        IssuesTableConfig { sort: true, ..Default::default() }
+    }
+}
+
+pub fn issues_table(
+    mut issues: Vec<super::model::IssueSearchResult>,
+    config: &IssuesTableConfig,
+) -> Table {
     let mut table = Table::new();
     let format = format::FormatBuilder::new()
         .column_separator('|')
@@ -221,7 +258,7 @@ pub fn issues_table(mut issues: Vec<super::model::IssueSearchResult>, sort: bool
         .build();
     table.set_format(format);
 
-    if sort {
+    if config.sort {
         issues.sort_by(|x, y| {
             let x_type = &x.fields.issuetype.name;
             let x_parent = match &x.fields.parent {
@@ -261,13 +298,13 @@ pub fn issues_table(mut issues: Vec<super::model::IssueSearchResult>, sort: bool
             "<none>".dimmed()
         };
 
-        table.add_row(row![
-            c->issue.fields.issuetype.name,
-            br->status,
-            bc->issue.key,
-            summary,
-            assignee
-        ]);
+        let row = if config.skip_type {
+            row![ c->issue.fields.issuetype.name, br->status, bc->issue.key, summary, assignee ]
+        } else {
+            row![ br->status, bc->issue.key, summary, assignee ]
+        };
+
+        table.add_row(row);
     }
 
     table
