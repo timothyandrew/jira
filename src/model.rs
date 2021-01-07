@@ -23,6 +23,8 @@ pub struct Project {
 #[serde(tag = "name")]
 pub enum IssueStatus {
     #[serde(rename = "To Do")]
+    ToDoLegacy,
+    #[serde(rename = "TODO")]
     ToDo,
     Logged,
     #[serde(rename = "In Progress")]

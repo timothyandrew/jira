@@ -158,10 +158,6 @@ pub async fn create_issue(issue: model::Issue, config: &ApiConfig) -> Result<(),
         update: HashMap::new(),
     };
 
-    println!(
-        "{}",
-        serde_json::to_string(&request.fields.description.clone().unwrap()).unwrap()
-    );
     let request = build_request("/issue", Method::POST, &config).json(&request);
     let response = request.send().await?;
 

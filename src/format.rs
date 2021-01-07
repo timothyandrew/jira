@@ -74,6 +74,7 @@ pub fn issue_type_colored(t: IssueStatus) -> colored::ColoredString {
         IssueStatus::InProgress => s.bright_cyan(),
         IssueStatus::InReview => s.truecolor(145, 115, 188).bold(),
         IssueStatus::ToDo => s.white(),
+        IssueStatus::ToDoLegacy => s.white(),
         IssueStatus::Logged => s.dimmed().italic().truecolor(180, 180, 180),
         IssueStatus::SupportTriaged => s.dimmed().italic().truecolor(180, 180, 180),
     }
