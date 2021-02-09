@@ -86,6 +86,7 @@ pub struct Issue {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<IssueStatus>,
     pub parent: Option<IssueParent>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub assignee: Option<IssueAssignee>,
     #[serde(rename = "customfield_10008")]
     #[serde(skip_serializing_if = "Option::is_none")]
