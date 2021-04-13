@@ -341,6 +341,9 @@ fn convert_node_markdown_to_adf<'a>(node: &'a AstNode<'a>, marks: Option<Vec<Mar
         NodeValue::FootnoteReference(_) => {
             panic!("Footnotes aren't supported!");
         }
+        NodeValue::FrontMatter(_) => {
+            panic!("Front matter isn't supported!");
+        }
     }
 }
 
